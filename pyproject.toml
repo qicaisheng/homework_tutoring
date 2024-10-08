@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "homework_tutoring"
+version = "0.1.0"
+description = ""
+authors = ["qicaisheng <qicaisheng@qq.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+zhipuai = "^2.1.5.20230904"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
