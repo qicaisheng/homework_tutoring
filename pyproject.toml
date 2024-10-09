@@ -8,6 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 zhipuai = "^2.1.5.20230904"
+openai = "^1.51.2"
 
 
 [tool.poetry.group.dev.dependencies]
