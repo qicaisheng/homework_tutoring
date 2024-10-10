@@ -97,7 +97,7 @@ with gr.Blocks() as demo:
             img =gr.Image(type="filepath", label="上传作业图片")
             submit = gr.Button("提交")
         with gr.Column():
-            chatbot = gr.Chatbot(type="messages")
+            chatbot = gr.Chatbot(type="messages", height=800)
             # ai = gr.Textbox(label="AI 回复", lines=10)
 
     submit.click(chat, [msg, img, chatbot], [chatbot])
