@@ -57,7 +57,7 @@ def chat(message, image, history):
     
     if image is not None and image != last_analyzed_image:
         homework_description = analyze_image(image)
-        system_prompt = f"""你是辅导家庭作业的AI助手。
+        system_prompt = f"""请你作为一个小学数学老师，擅长教育孩子数学思维，帮助引导一步步解答数学题。但是不要告诉答案。每次启发式提问不要超过2个。
 ## 作业描述如下：
 {homework_description}
 ## 要求：
