@@ -1,4 +1,6 @@
 import gradio as gr
+import random
+import time
 from openai import OpenAI
 import os
 import base64
@@ -40,7 +42,7 @@ def analyze_image(image):
                         },
                         {
                             "type": "text",
-                            "text": "请描述这张图片中的数学题目内容"
+                            "text": "完整描述题目内容"
                         }
                     ]
                 }
@@ -50,12 +52,18 @@ def analyze_image(image):
     except Exception as e:
         return f"分析图片时出错：{str(e)}"
 
-def chat(message, history, image):
+def chat(message, image, history):
     global conversation_history, last_analyzed_image
     
     if image is not None and image != last_analyzed_image:
         homework_description = analyze_image(image)
-        system_prompt = f"你是辅导家庭作业的AI助手，当用户不清楚该怎么做的时候，可以尝试理解一下用户不清楚的原因，逐步引导用户一步步思考。整个过程会采用一问一答的方式，过程中都不能告诉答案，也不需要一次性全部回复解题思路，需要一步步引导用户思考然后基于用户的思考再继续回复。作业描述如下：{homework_description}"
+        system_prompt = f"""你是辅导家庭作业的AI助手。
+## 作业描述如下：
+{homework_description}
+## 要求：
+可以尝试理解一下用户不清楚的原因，逐步引导用户一步步思考。整个过程会采用一问一答的方式，过程中都不能告诉答案，也不需要一次性全部回复解题思路，需要一步步引导用户思考然后基于用户的思考再继续回复。
+"""
+
         conversation_history = [{"role": "system", "content": system_prompt}]
         last_analyzed_image = image
     elif not conversation_history:
@@ -72,29 +80,26 @@ def chat(message, history, image):
     )
     
     partial_message = ""
+    history.append({"role": "assistant", "content": partial_message})
     for chunk in response:
         if chunk.choices[0].delta.content:
             partial_message += chunk.choices[0].delta.content
-            yield partial_message, history
+            history[-1]["content"] = partial_message
+            yield history
     
     conversation_history.append({"role": "assistant", "content": partial_message})
-    history.append({"role": "assistant", "content": partial_message})
 
-iface = gr.Interface(
-    fn=chat,
-    inputs=[
-        gr.Textbox(lines=2, label="您的消息"),
-        gr.State([]),
-        gr.Image(type="filepath", label="上传作业图片")
-    ],
-    outputs=[
-        gr.Textbox(label="AI 回复", lines=10),
-        gr.State()
-    ],
-    title="作业辅导AI助手",
-    description="上传您的作业图片，然后与AI对话获取帮助！",
-    allow_flagging="never",
-)
 
-if __name__ == "__main__":
-    iface.launch()
+with gr.Blocks() as demo:
+    with gr.Row():
+        with gr.Column():
+            msg = gr.Textbox(lines=2, label="您的消息")
+            img =gr.Image(type="filepath", label="上传作业图片")
+            submit = gr.Button("提交")
+        with gr.Column():
+            chatbot = gr.Chatbot(type="messages")
+            # ai = gr.Textbox(label="AI 回复", lines=10)
+
+    submit.click(chat, [msg, img, chatbot], [chatbot])
+
+demo.launch()
