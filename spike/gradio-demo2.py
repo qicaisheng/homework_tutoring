@@ -10,6 +10,8 @@ client = OpenAI(
     base_url="https://open.bigmodel.cn/api/paas/v4/",
 )
 
+openai_client = OpenAI()
+
 conversation_history = []
 MAX_CONVERSATION_ROUND = 10
 MAX_CONVERSATION_HISTORY_SIZE = 2 * MAX_CONVERSATION_ROUND
@@ -42,7 +44,7 @@ def analyze_image(image):
                         },
                         {
                             "type": "text",
-                            "text": "完整描述题目内容"
+                            "text": "完整描述题目内容，如果题目带图形，描述图形中的几何信息"
                         }
                     ]
                 }
@@ -73,8 +75,9 @@ def chat(message, image, history):
     conversation_history.append({"role": "user", "content": message})
     history.append({"role": "user", "content": message})
     
-    response = client.chat.completions.create(
-        model="GLM-4-AirX",
+    response = openai_client.chat.completions.create(
+        # model="GLM-4-AirX",
+        model="gpt-4o",
         messages=conversation_history,
         stream=True
     )
