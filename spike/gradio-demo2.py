@@ -10,7 +10,7 @@ client = OpenAI(
     base_url="https://open.bigmodel.cn/api/paas/v4/",
 )
 
-openai_client = OpenAI()
+# openai_client = OpenAI()
 
 conversation_history = []
 MAX_CONVERSATION_ROUND = 10
@@ -75,9 +75,9 @@ def chat(message, image, history):
     conversation_history.append({"role": "user", "content": message})
     history.append({"role": "user", "content": message})
     
-    response = openai_client.chat.completions.create(
-        # model="GLM-4-AirX",
-        model="gpt-4o",
+    response = client.chat.completions.create(
+        model="GLM-4-AirX",
+        # model="gpt-4o",
         messages=conversation_history,
         stream=True
     )
