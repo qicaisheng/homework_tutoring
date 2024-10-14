@@ -96,8 +96,8 @@ def chat(message, image, history):
 with gr.Blocks() as demo:
     with gr.Row():
         with gr.Column():
-            msg = gr.Textbox(lines=2, label="您的消息")
             img =gr.Image(type="filepath", label="上传作业图片")
+            msg = gr.Textbox(lines=2, label="输入问题")
             submit = gr.Button("提交")
         with gr.Column():
             chatbot = gr.Chatbot(type="messages", height=800)
