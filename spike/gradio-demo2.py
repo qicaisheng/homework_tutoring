@@ -88,7 +88,7 @@ def chat(message, image, history):
         if chunk.choices[0].delta.content:
             partial_message += chunk.choices[0].delta.content
             history[-1]["content"] = partial_message
-            yield history
+            yield history, partial_message
     
     conversation_history.append({"role": "assistant", "content": partial_message})
 
@@ -99,10 +99,10 @@ with gr.Blocks() as demo:
             img =gr.Image(type="filepath", label="上传作业图片")
             msg = gr.Textbox(lines=2, label="输入问题")
             submit = gr.Button("提交")
+            ai = gr.Textbox(label="AI 回复", lines=10)
         with gr.Column():
             chatbot = gr.Chatbot(type="messages", height=800)
-            # ai = gr.Textbox(label="AI 回复", lines=10)
 
-    submit.click(chat, [msg, img, chatbot], [chatbot])
+    submit.click(chat, [msg, img, chatbot], [chatbot, ai])
 
 demo.launch()
