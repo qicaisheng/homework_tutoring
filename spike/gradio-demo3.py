@@ -57,25 +57,65 @@ def analyze_image(image):
         return f"分析图片时出错：{str(e)}"
 
 
-def generate_html(audio_base64: str) -> str:
-    """生成 HTML，用于音频播放"""
+def generate_html(initial_audio_base64: str) -> str:
+    """生成 HTML，用于动态创建多个音频播放器并按顺序播放"""
     return f"""
-    <audio id="player" controls autoplay>
-        <source src="{audio_base64}" type="audio/mp3">
-        Your browser does not support the audio element.
-    </audio>
+    <div id="audio-container">
+        <audio controls autoplay id="audio-0">
+            <source src="{initial_audio_base64}" type="audio/mp3">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+
     <script>
-    const player = document.getElementById('player');
-    player.onended = async () => {{
-        const response = await fetch('/next_audio');  // 获取下一个音频文件的 Base64 数据
-        const nextAudio = await response.text();
-        if (nextAudio) {{
-            player.src = nextAudio;
-            player.play();
+    let audioIndex = 1;  // 音频播放器计数
+
+    // 获取音频容器
+    const audioContainer = document.getElementById('audio-container');
+
+    // 监听第一个音频的结束事件
+    document.getElementById('audio-0').onended = loadNextAudio;
+
+    async function loadNextAudio() {{
+        console.log("当前音频播放完毕，加载下一个音频...");
+        try {{
+            const response = await fetch('/next_audio');  // 调用 API 获取下一个音频文件
+            if (!response.ok) {{
+                console.error("无法获取下一个音频，可能没有更多音频。");
+                return;
+            }}
+            const nextAudioBase64 = await response.text();
+            if (nextAudioBase64) {{
+                // 创建新的 audio 元素
+                const newAudio = document.createElement('audio');
+                newAudio.controls = true;
+                newAudio.autoplay = true;
+                newAudio.id = `audio-${{audioIndex}}`;  // 使用双括号
+
+                // 设置音频源
+                const source = document.createElement('source');
+                source.src = `${{nextAudioBase64}}`;  // 确保正确的 Base64 格式
+
+                source.type = 'audio/mp3';
+                newAudio.appendChild(source);
+
+                // 将新的 audio 添加到容器中
+                audioContainer.appendChild(newAudio);
+
+                // 监听新 audio 的结束事件
+                newAudio.onended = loadNextAudio;
+
+                console.log(`已创建 audio-${{audioIndex}}`);
+                audioIndex++;  // 递增索引，标识下一个音频
+            }}
+        }} catch (error) {{
+            console.error("获取下一个音频时发生错误：", error);
         }}
-    }};
+    }}
     </script>
     """
+
+
 
 def llm_reply(message, image):
     system_prompt = """请你作为一个小学数学老师，擅长教育学生数学思维，帮助引导一步步解答数学题。过程中可以引导学生列出方程式，但是不要告诉答案。每次启发式提问不要超过2个，每次回答保持75字以内。
