@@ -371,5 +371,5 @@ async def recognize(audio_path: str):
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     # loop.run_until_complete(recognize("../audio/recording-2ddcd8b7238340c18a0c708082481c89.wav"))
-    loop.run_until_complete(recognize("./audio/audio_7eb61496-adb7-4db3-b581-41ba95f63158.wav"))
+    loop.run_until_complete(recognize("./audio/audio_10325373-250c-4a99-81c5-77b476978f90.wav"))
     

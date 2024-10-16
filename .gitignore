@@ -163,3 +163,4 @@ cython_debug/
 
 
 audio/*
+.DS_Store

@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import io
 import os
 import uuid
 from pydub import AudioSegment
@@ -33,8 +34,13 @@ async def process_audio(audio_data, image_id):
     audio_filename = f"./audio/audio_{uuid.uuid4()}.wav"
 
     audio_bytes = base64.b64decode(audio_data)
-    with open(audio_filename, "wb") as audio_file:
-        audio_file.write(audio_bytes)
+    # with open(audio_filename, "wb") as audio_file:
+    #     audio_file.write(audio_bytes)
+
+    audio = AudioSegment.from_file(io.BytesIO(audio_bytes), format="webm")  # 假设格式为 webm，根据实际情况调整
+    
+    # 将音频保存为 WAV 文件
+    audio.export(audio_filename, format="wav", codec="pcm_s16le")
 
     # save_audio_with_pydub(audio_filename, audio_bytes)
 
