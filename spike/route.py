@@ -169,8 +169,8 @@ async def get():
             }
 
             function playAudio(audioBase64) {
-                const audio = new Audio("data:audio/wav;base64," + audioBase64);
-                audio.play();
+                const audio = new Audio(audioBase64);
+                audio.play().catch(e => console.error('音频播放失败:', e));
                 document.getElementById("audioPlayback").innerHTML = "正在播放音频...";
             }
 
