@@ -5,6 +5,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 import base64
 import uuid
 
+from spike import service
+
 app = FastAPI()
 image_storage = {}  # 存储图片 ID 和文件内容
 
@@ -197,27 +199,7 @@ async def process_audio(request: Request):
     image_id = data["imageId"]
     audio_data = data["audioData"]
 
-    # 解码base64音频数据
-    audio_bytes = base64.b64decode(audio_data)
-
-    # 生成唯一的音频文件名
-    audio_filename = f"./audio/audio_{uuid.uuid4()}.wav"
-
-    # 保存音频文件
-    with open(audio_filename, "wb") as audio_file:
-        audio_file.write(audio_bytes)
-
-    # 这里可以添加音频处理逻辑
-    # 例如：调用语音识别API，分析音频内容等
-
-    # 获取对应的图片描述
-    description = image_description_map.get(image_id, "未找到对应的图片描述")
-
-    # 这里应该添加实际的音频处理逻辑
-    # 暂时返回一个示例消息
-    message = f"音频已处理。地址：{audio_filename}"
-
-    return JSONResponse({"message": message})
+    service.process_audio(audio_data, image_id)
 
 # WebSocket 处理
 @app.websocket("/ws")
