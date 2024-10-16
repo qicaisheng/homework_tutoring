@@ -29,7 +29,7 @@ def upload_image(image):
     return image_id, description
 
 
-async def process_audio(audio_data, image_id):
+async def process_audio(audio_data, image_id="2890e8fc-66b0-4404-9b00-ffae791be000"):
     audio_filename = save_input_audio_file(audio_data)
 
     input_text = await recognize(audio_filename)

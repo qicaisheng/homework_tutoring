@@ -11,42 +11,64 @@ image_storage = {}  # 存储图片 ID 和文件内容
 async def get():
     return HTMLResponse("""
     <!DOCTYPE html>
-    <html>
+    <html lang="zh-CN">
     <head>
-        <title>图片上传与分析</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>图片上传与语音交互</title>
         <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                line-height: 1.6;
+            }
+            h1, h2 {
+                color: #333;
+            }
             #imagePreview {
-                max-width: 300px;
-                max-height: 300px;
+                max-width: 100%;
+                height: auto;
                 margin-top: 10px;
             }
             #recordButton {
-                width: 100px;
-                height: 100px;
+                width: 80px;
+                height: 80px;
                 border-radius: 50%;
-                background-color: #f0f0f0;
-                # display: none;
-                display: block;
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                font-size: 16px;
+                cursor: pointer;
+                transition: background-color 0.3s;
             }
-            .loading {
-                display: none;
+            #recordButton:hover {
+                background-color: #45a049;
+            }
+            .loading, #imageUploadResult, #recordingStatus, #audioPlayback {
+                margin-top: 10px;
+            }
+            input[type="file"], button {
                 margin-top: 10px;
             }
         </style>
     </head>
     <body>
-        <h1>上传图片</h1>
+        <h1>图片上传与语音交互</h1>
         <input type="file" id="imageInput" accept="image/*" />
         <button onclick="uploadImage()">上传图片</button>
-        <div id="loading" class="loading">正在上传和处理图片...</div>
+        <div id="loading" class="loading" style="display: none;">正在上传和处理图片...</div>
         <div id="imageUploadResult"></div>
-        <img id="imagePreview" style="display: none;" />
-        <h2>录音功能</h2>
+        <img id="imagePreview" style="display: none;" alt="预览图片" />
+        
+        <h2>语音交互</h2>
         <p>上传图片后，按住按钮开始录音，松开按钮结束录音。</p>
-        <button id="recordButton" >按住录音</button>
-        # <input  id="imageIdInput" value="2890e8fc-66b0-4404-9b00-ffae791be000" />
+        <button id="recordButton">按住录音</button>
+        <input type="hidden" id="imageIdInput" />
         <div id="recordingStatus"></div>
         <div id="audioPlayback"></div>
+
         <script>
             let mediaRecorder;
             let audioChunks = [];
@@ -64,7 +86,6 @@ async def get():
                 const formData = new FormData();
                 formData.append("image", file);
                 
-                // 显示加载提示
                 document.getElementById("loading").style.display = "block";
                 document.getElementById("imageUploadResult").innerHTML = "";
                 
@@ -74,14 +95,11 @@ async def get():
                 })
                 .then(response => response.json())
                 .then(data => {
-                    // 隐藏加载提示
                     document.getElementById("loading").style.display = "none";
                     document.getElementById("imageUploadResult").innerHTML = "图片上传成功！图片ID: " + data.imageId + "<br>题目描述: " + data.description;
                     document.getElementById("imageIdInput").value = data.imageId;
-                    document.getElementById("recordButton").style.display = "block";
                     document.getElementById("recordButton").disabled = false;
                     
-                    // 显示图片预览
                     const preview = document.getElementById("imagePreview");
                     preview.src = URL.createObjectURL(file);
                     preview.style.display = "block";
@@ -150,8 +168,9 @@ async def get():
                             document.getElementById("recordingStatus").innerText = "音频处理失败，请重试。";
                         });
                     };
-                }, 300); // 300毫秒的防抖延迟
+                }, 300);
             }
+
             let audioQueue = [];
             let isPlaying = false;
 
@@ -220,7 +239,7 @@ async def process_audio(request: Request):
     audio_data = data["audioData"]
 
     try:
-        await service.process_audio(audio_data, image_id)
+        await service.process_audio(audio_data)
         return JSONResponse({"status": "success", "message": "音频处理成功"})
     except Exception as e:
         return JSONResponse({"status": "error", "message": f"音频处理失败: {str(e)}"}, status_code=500)
