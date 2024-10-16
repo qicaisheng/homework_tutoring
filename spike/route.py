@@ -152,6 +152,8 @@ async def get():
                     };
                 }, 300); // 300毫秒的防抖延迟
             }
+            let audioQueue = [];
+            let isPlaying = false;
 
             function startAudioStream() {
                 if (eventSource) {
@@ -160,7 +162,10 @@ async def get():
                 eventSource = new EventSource('/audio_stream');
                 eventSource.onmessage = function(event) {
                     const audioBase64 = event.data;
-                    playAudio(audioBase64);
+                    audioQueue.push(audioBase64);
+                    if (!isPlaying) {
+                        playNextAudio();
+                    }
                 };
                 eventSource.onerror = function(error) {
                     console.error('SSE错误:', error);
@@ -168,10 +173,25 @@ async def get():
                 };
             }
 
-            function playAudio(audioBase64) {
-                const audio = new Audio(audioBase64);
-                audio.play().catch(e => console.error('音频播放失败:', e));
-                document.getElementById("audioPlayback").innerHTML = "正在播放音频...";
+            function playNextAudio() {
+                if (audioQueue.length > 0) {
+                    isPlaying = true;
+                    const audioBase64 = audioQueue.shift();
+                    const audio = new Audio(audioBase64);
+                    audio.onended = function() {
+                        isPlaying = false;
+                        playNextAudio();
+                    };
+                    audio.play().catch(e => {
+                        console.error('音频播放失败:', e);
+                        isPlaying = false;
+                        playNextAudio();
+                    });
+                    document.getElementById("audioPlayback").innerHTML = "正在播放音频...";
+                } else {
+                    isPlaying = false;
+                    document.getElementById("audioPlayback").innerHTML = "音频播放完毕";
+                }
             }
 
             document.getElementById('recordButton').addEventListener('mousedown', startRecording);
