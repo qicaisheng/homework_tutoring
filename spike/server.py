@@ -29,12 +29,17 @@ async def get():
                 background-color: #f0f0f0;
                 display: none;
             }
+            .loading {
+                display: none;
+                margin-top: 10px;
+            }
         </style>
     </head>
     <body>
         <h1>上传图片</h1>
         <input type="file" id="imageInput" accept="image/*" />
         <button onclick="uploadImage()">上传图片</button>
+        <div id="loading" class="loading">正在上传和处理图片...</div>
         <div id="imageUploadResult"></div>
         <img id="imagePreview" style="display: none;" />
         <h2>录音功能</h2>
@@ -46,6 +51,7 @@ async def get():
             let mediaRecorder;
             let audioChunks = [];
             let isRecording = false;
+            let debounceTimer;
 
             function uploadImage() {
                 const input = document.getElementById("imageInput");
@@ -57,12 +63,18 @@ async def get():
                 const formData = new FormData();
                 formData.append("image", file);
                 
+                // 显示加载提示
+                document.getElementById("loading").style.display = "block";
+                document.getElementById("imageUploadResult").innerHTML = "";
+                
                 fetch("/upload_image", {
                     method: "POST",
                     body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
+                    // 隐藏加载提示
+                    document.getElementById("loading").style.display = "none";
                     document.getElementById("imageUploadResult").innerHTML = "图片上传成功！图片ID: " + data.imageId + "<br>题目描述: " + data.description;
                     document.getElementById("imageIdInput").value = data.imageId;
                     document.getElementById("recordButton").style.display = "block";
@@ -75,6 +87,7 @@ async def get():
                 })
                 .catch(error => {
                     console.error("上传图片时出错:", error);
+                    document.getElementById("loading").style.display = "none";
                     document.getElementById("imageUploadResult").innerHTML = "上传图片失败，请重试。";
                 });
             }
@@ -107,32 +120,35 @@ async def get():
             }
 
             function sendAudioToServer(audioBlob) {
-                const imageId = document.getElementById("imageIdInput").value;
-                const reader = new FileReader();
-                reader.readAsDataURL(audioBlob);
-                reader.onloadend = function() {
-                    const base64Audio = reader.result.split(',')[1];
-                    const data = JSON.stringify({
-                        imageId: imageId,
-                        audioData: base64Audio
-                    });
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    const imageId = document.getElementById("imageIdInput").value;
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = function() {
+                        const base64Audio = reader.result.split(',')[1];
+                        const data = JSON.stringify({
+                            imageId: imageId,
+                            audioData: base64Audio
+                        });
 
-                    fetch('/process_audio', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: data
-                    })
-                    .then(response => response.json())
-                    .then(result => {
-                        document.getElementById("recordingStatus").innerText = "音频处理结果: " + result.message;
-                    })
-                    .catch(error => {
-                        console.error('音频处理错误:', error);
-                        document.getElementById("recordingStatus").innerText = "音频处理失败，请重试。";
-                    });
-                };
+                        fetch('/process_audio', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: data
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            document.getElementById("recordingStatus").innerText = "音频处理结果: " + result.message;
+                        })
+                        .catch(error => {
+                            console.error('音频处理错误:', error);
+                            document.getElementById("recordingStatus").innerText = "音频处理失败，请重试。";
+                        });
+                    };
+                }, 300); // 300毫秒的防抖延迟
             }
 
             document.getElementById('recordButton').addEventListener('mousedown', startRecording);
@@ -185,7 +201,7 @@ async def process_audio(request: Request):
     audio_bytes = base64.b64decode(audio_data)
 
     # 生成唯一的音频文件名
-    audio_filename = f"audio_{uuid.uuid4()}.wav"
+    audio_filename = f"./audio/audio_{uuid.uuid4()}.wav"
 
     # 保存音频文件
     with open(audio_filename, "wb") as audio_file:
@@ -199,10 +215,7 @@ async def process_audio(request: Request):
 
     # 这里应该添加实际的音频处理逻辑
     # 暂时返回一个示例消息
-    message = f"音频已处理。图片描述：{description}"
-
-    # 删除临时音频文件
-    os.remove(audio_filename)
+    message = f"音频已处理。地址：{audio_filename}"
 
     return JSONResponse({"message": message})
 
