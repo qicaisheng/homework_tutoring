@@ -26,7 +26,8 @@ MESSAGE_COMPRESSIONS = {0: "no compression", 1: "gzip", 15: "custom compression 
 appid = os.environ.get("HUOSHAN_APP_ID")
 token = os.environ.get("HUOSHAN_TOKEN")
 cluster = "volcano_tts"
-voice_type = "BV001_streaming"
+# voice_type = "BV001_streaming"
+voice_type = "BV061_streaming"
 host = "openspeech.bytedance.com"
 api_url = f"wss://{host}/api/v1/tts/ws_binary"
 
