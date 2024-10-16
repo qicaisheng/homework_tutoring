@@ -1,6 +1,6 @@
 import json
 from fastapi import FastAPI, Request, WebSocket
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 from spike import service
 
@@ -45,11 +45,13 @@ async def get():
         <button id="recordButton" disabled>按住录音</button>
         <input type="hidden" id="imageIdInput" />
         <div id="recordingStatus"></div>
+        <div id="audioPlayback"></div>
         <script>
             let mediaRecorder;
             let audioChunks = [];
             let isRecording = false;
             let debounceTimer;
+            let eventSource;
 
             function uploadImage() {
                 const input = document.getElementById("imageInput");
@@ -100,7 +102,7 @@ async def get():
                 };
 
                 mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
                     sendAudioToServer(audioBlob);
                 };
 
@@ -140,6 +142,7 @@ async def get():
                         .then(response => response.json())
                         .then(result => {
                             document.getElementById("recordingStatus").innerText = "音频处理结果: " + result.message;
+                            startAudioStream();
                         })
                         .catch(error => {
                             console.error('音频处理错误:', error);
@@ -147,6 +150,27 @@ async def get():
                         });
                     };
                 }, 300); // 300毫秒的防抖延迟
+            }
+
+            function startAudioStream() {
+                if (eventSource) {
+                    eventSource.close();
+                }
+                eventSource = new EventSource('/audio_stream');
+                eventSource.onmessage = function(event) {
+                    const audioBase64 = event.data;
+                    playAudio(audioBase64);
+                };
+                eventSource.onerror = function(error) {
+                    console.error('SSE错误:', error);
+                    eventSource.close();
+                };
+            }
+
+            function playAudio(audioBase64) {
+                const audio = new Audio("data:audio/wav;base64," + audioBase64);
+                audio.play();
+                document.getElementById("audioPlayback").innerHTML = "正在播放音频...";
             }
 
             document.getElementById('recordButton').addEventListener('mousedown', startRecording);
@@ -174,7 +198,16 @@ async def process_audio(request: Request):
     image_id = data["imageId"]
     audio_data = data["audioData"]
 
-    service.process_audio(audio_data, image_id)
+    try:
+        await service.process_audio(audio_data, image_id)
+        return JSONResponse({"status": "success", "message": "音频处理成功"})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": f"音频处理失败: {str(e)}"}, status_code=500)
+
+@app.get("/audio_stream")
+async def audio_stream():
+    return StreamingResponse(service.generate_audio_stream(), media_type='text/event-stream')
+
 
 # WebSocket 处理
 @app.websocket("/ws")

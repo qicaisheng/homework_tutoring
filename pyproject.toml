@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.12"
 zhipuai = "^2.1.5.20230904"
 openai = "^1.51.2"
+fastapi = "^0.115.2"
 
 
 [tool.poetry.group.dev.dependencies]
