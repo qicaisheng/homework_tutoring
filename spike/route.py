@@ -36,21 +36,35 @@ async def get():
                 width: 80px;
                 height: 80px;
                 border-radius: 50%;
-                background-color: #4CAF50;
+                background-color: #2196F3;
                 color: white;
                 border: none;
                 font-size: 16px;
                 cursor: pointer;
                 transition: background-color 0.3s;
             }
-            #recordButton:hover {
-                background-color: #45a049;
+            #recordButton:active {
+                background-color: #FF0000;
             }
             .loading, #imageUploadResult, #recordingStatus, #audioPlayback {
                 margin-top: 10px;
             }
             input[type="file"], button {
                 margin-top: 10px;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            .audio-icon {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 3px solid #f3f3f3;
+                border-top: 3px solid #3498db;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin-right: 10px;
             }
         </style>
     </head>
@@ -206,7 +220,7 @@ async def get():
                         isPlaying = false;
                         playNextAudio();
                     });
-                    document.getElementById("audioPlayback").innerHTML = "正在播放音频...";
+                    document.getElementById("audioPlayback").innerHTML = '<span class="audio-icon"></span>正在播放音频...';
                 } else {
                     isPlaying = false;
                     document.getElementById("audioPlayback").innerHTML = "音频播放完毕";
