@@ -17,7 +17,7 @@ def llm_reply(message, image_description):
 ## 作业描述如下：
 {homework_description}
 """
-    global conversation_history, gradio_chatbot_histoy, last_analyzed_image, homework_description
+    global conversation_history, last_analyzed_image, homework_description
     
     initial_message = {
         "role": "system", 

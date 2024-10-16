@@ -4,7 +4,6 @@ import io
 import os
 import uuid
 from pydub import AudioSegment
-from pydub.exceptions import CouldntDecodeError
 from spike.image_analysis import analyze_image
 from spike.llm_conversation import llm_reply
 from spike.text_segmenter import segment_text
@@ -31,18 +30,7 @@ def upload_image(image):
 
 
 async def process_audio(audio_data, image_id):
-    audio_filename = f"./audio/audio_{uuid.uuid4()}.wav"
-
-    audio_bytes = base64.b64decode(audio_data)
-    # with open(audio_filename, "wb") as audio_file:
-    #     audio_file.write(audio_bytes)
-
-    audio = AudioSegment.from_file(io.BytesIO(audio_bytes), format="webm")  # 假设格式为 webm，根据实际情况调整
-    
-    # 将音频保存为 WAV 文件
-    audio.export(audio_filename, format="wav", codec="pcm_s16le")
-
-    # save_audio_with_pydub(audio_filename, audio_bytes)
+    audio_filename = save_input_audio_file(audio_data)
 
     input_text = await recognize(audio_filename)
 
@@ -61,25 +49,18 @@ async def process_audio(audio_data, image_id):
         audio_base64 = await tts(text=segment)
         await audio_queue.put(audio_base64)
 
+def save_input_audio_file(audio_data):
+    audio_filename = f"./audio/audio_{uuid.uuid4()}.wav"
+
+    audio_bytes = base64.b64decode(audio_data)
+
+    audio = AudioSegment.from_file(io.BytesIO(audio_bytes), format="webm")  # 假设格式为 webm，根据实际情况调整
+    
+    audio.export(audio_filename, format="wav", codec="pcm_s16le")
+    return audio_filename
+
 async def generate_audio_stream():
     while True:
         audio_base64 = await audio_queue.get()
         yield f"data: {audio_base64}\n\n"
 
-
-def save_audio_with_pydub(file_name, audio_data):
-    try:
-        # Create an AudioSegment from raw data
-        audio_segment = AudioSegment(
-            data=audio_data,
-            sample_width=4,
-            frame_rate=48000,
-            channels=1
-        )
-
-        # Export the AudioSegment to a WAV file
-        audio_segment.export(file_name, format="wav")
-        print(f"Audio saved successfully with pydub as {file_name}")
-
-    except CouldntDecodeError:
-        print(f"Could not decode audio data for {file_name}")
