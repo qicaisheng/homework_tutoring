@@ -165,7 +165,7 @@ from image_analysis import analyze_image
 import uuid
 
 # 存储图片ID和题目描述的映射关系
-image_description_map = {}
+
 
 # 修改uploadImage函数
 @app.route("/upload_image", methods=["POST"])
@@ -173,22 +173,7 @@ async def upload_image(request: Request):
     form = await request.form()
     image = form["image"]
     
-    # 生成唯一的图片ID
-    image_id = str(uuid.uuid4())
-    
-    # 保存图片到临时文件
-    temp_image_path = f"temp_{image_id}.jpg"
-    with open(temp_image_path, "wb") as f:
-        f.write(image.file.read())
-    
-    # 分析图片获取题目描述
-    description = analyze_image(temp_image_path)
-    
-    # 建立图片ID和题目描述的映射关系
-    image_description_map[image_id] = description
-    
-    # 删除临时文件
-    os.remove(temp_image_path)
+    image_id, description = service.upload_image(image)
     
     return JSONResponse({"imageId": image_id, "description": description})
 

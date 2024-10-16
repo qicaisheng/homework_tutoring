@@ -1,5 +1,25 @@
 import base64
+import os
 import uuid
+
+from spike.image_analysis import analyze_image
+
+image_description_map = {}
+
+def upload_image(image):
+    image_id = str(uuid.uuid4())
+    
+    temp_image_path = f"temp_{image_id}.jpg"
+    with open(temp_image_path, "wb") as f:
+        f.write(image.file.read())
+    
+    description = analyze_image(temp_image_path)
+    
+    image_description_map[image_id] = description
+    
+    os.remove(temp_image_path)
+
+    return image_id, description
 
 
 def process_audio(audio_data, image_id):
