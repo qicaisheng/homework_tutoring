@@ -1,16 +1,12 @@
 import json
-import os
-from fastapi import FastAPI, Request, UploadFile, File, WebSocket
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.responses import HTMLResponse, JSONResponse
-import base64
-import uuid
 
 from spike import service
 
 app = FastAPI()
 image_storage = {}  # 存储图片 ID 和文件内容
 
-# 主页
 @app.get("/")
 async def get():
     return HTMLResponse("""
@@ -160,21 +156,15 @@ async def get():
     </body>
     </html>
     """)
-# 导入所需的模块
-from image_analysis import analyze_image
-import uuid
-
-# 存储图片ID和题目描述的映射关系
 
 
-# 修改uploadImage函数
 @app.route("/upload_image", methods=["POST"])
 async def upload_image(request: Request):
     form = await request.form()
     image = form["image"]
     
     image_id, description = service.upload_image(image)
-    
+
     return JSONResponse({"imageId": image_id, "description": description})
 
 # 添加处理音频的路由
