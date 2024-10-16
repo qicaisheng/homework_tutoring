@@ -25,7 +25,8 @@ async def get():
                 height: 100px;
                 border-radius: 50%;
                 background-color: #f0f0f0;
-                display: none;
+                # display: none;
+                display: block;
             }
             .loading {
                 display: none;
@@ -42,8 +43,8 @@ async def get():
         <img id="imagePreview" style="display: none;" />
         <h2>录音功能</h2>
         <p>上传图片后，按住按钮开始录音，松开按钮结束录音。</p>
-        <button id="recordButton" disabled>按住录音</button>
-        <input type="hidden" id="imageIdInput" />
+        <button id="recordButton" >按住录音</button>
+        # <input  id="imageIdInput" value="2890e8fc-66b0-4404-9b00-ffae791be000" />
         <div id="recordingStatus"></div>
         <div id="audioPlayback"></div>
         <script>
