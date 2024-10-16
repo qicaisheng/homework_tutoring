@@ -15,32 +15,45 @@ async def get():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>音频流式传输</title>
+        <title>图片上传与分析</title>
+        <style>
+            #imagePreview {
+                max-width: 300px;
+                max-height: 300px;
+                margin-top: 10px;
+            }
+            #recordButton {
+                width: 100px;
+                height: 100px;
+                border-radius: 50%;
+                background-color: #f0f0f0;
+                display: none;
+            }
+        </style>
     </head>
     <body>
         <h1>上传图片</h1>
         <input type="file" id="imageInput" accept="image/*" />
         <button onclick="uploadImage()">上传图片</button>
         <div id="imageUploadResult"></div>
-        <h2>上传音频并关联图片ID</h2>
-        <input type="file" id="audioInput" accept="audio/*" />
-        <input type="text" id="imageIdInput" placeholder="图片ID" />
-        <button onclick="uploadAudio()">上传音频</button>
-        <h2>音频回复</h2>
-        <audio id="audioPlayer" controls></audio>
-        
+        <img id="imagePreview" style="display: none;" />
+        <h2>录音功能</h2>
+        <p>上传图片后，按住按钮开始录音，松开按钮结束录音。</p>
+        <button id="recordButton" disabled>按住录音</button>
+        <input type="hidden" id="imageIdInput" />
+        <div id="recordingStatus"></div>
         <script>
-            const socket = new WebSocket("ws://localhost:8000/ws");
+            let mediaRecorder;
+            let audioChunks = [];
+            let isRecording = false;
 
-            socket.onmessage = function(event) {
-                const audioPlayer = document.getElementById("audioPlayer");
-                audioPlayer.src = event.data;
-                audioPlayer.play();
-            };
-                        
             function uploadImage() {
                 const input = document.getElementById("imageInput");
                 const file = input.files[0];
+                if (!file) {
+                    alert("请选择一张图片");
+                    return;
+                }
                 const formData = new FormData();
                 formData.append("image", file);
                 
@@ -51,6 +64,14 @@ async def get():
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById("imageUploadResult").innerHTML = "图片上传成功！图片ID: " + data.imageId + "<br>题目描述: " + data.description;
+                    document.getElementById("imageIdInput").value = data.imageId;
+                    document.getElementById("recordButton").style.display = "block";
+                    document.getElementById("recordButton").disabled = false;
+                    
+                    // 显示图片预览
+                    const preview = document.getElementById("imagePreview");
+                    preview.src = URL.createObjectURL(file);
+                    preview.style.display = "block";
                 })
                 .catch(error => {
                     console.error("上传图片时出错:", error);
@@ -58,23 +79,65 @@ async def get():
                 });
             }
 
-            function uploadAudio() {
-                const input = document.getElementById("audioInput");
-                const imageId = document.getElementById("imageIdInput").value;
-                const file = input.files[0];
-                const reader = new FileReader();
+            async function startRecording() {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
 
-                reader.onload = function(event) {
-                    const audioData = event.target.result.split(',')[1]; // 获取 Base64 数据
-                    const data = {
-                        imageId: imageId,
-                        audioData: audioData
-                    };
-                    socket.send(JSON.stringify(data));
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
                 };
 
-                reader.readAsDataURL(file);
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    sendAudioToServer(audioBlob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                document.getElementById("recordingStatus").innerText = "正在录音...";
             }
+
+            function stopRecording() {
+                if (isRecording) {
+                    mediaRecorder.stop();
+                    isRecording = false;
+                    document.getElementById("recordingStatus").innerText = "录音已结束，正在处理...";
+                }
+            }
+
+            function sendAudioToServer(audioBlob) {
+                const imageId = document.getElementById("imageIdInput").value;
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = function() {
+                    const base64Audio = reader.result.split(',')[1];
+                    const data = JSON.stringify({
+                        imageId: imageId,
+                        audioData: base64Audio
+                    });
+
+                    fetch('/process_audio', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: data
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        document.getElementById("recordingStatus").innerText = "音频处理结果: " + result.message;
+                    })
+                    .catch(error => {
+                        console.error('音频处理错误:', error);
+                        document.getElementById("recordingStatus").innerText = "音频处理失败，请重试。";
+                    });
+                };
+            }
+
+            document.getElementById('recordButton').addEventListener('mousedown', startRecording);
+            document.getElementById('recordButton').addEventListener('mouseup', stopRecording);
+            document.getElementById('recordButton').addEventListener('mouseleave', stopRecording);
         </script>
     </body>
     </html>
@@ -111,7 +174,37 @@ async def upload_image(request: Request):
     
     return JSONResponse({"imageId": image_id, "description": description})
 
-# 修改前端的uploadImage函数
+# 添加处理音频的路由
+@app.post("/process_audio")
+async def process_audio(request: Request):
+    data = await request.json()
+    image_id = data["imageId"]
+    audio_data = data["audioData"]
+
+    # 解码base64音频数据
+    audio_bytes = base64.b64decode(audio_data)
+
+    # 生成唯一的音频文件名
+    audio_filename = f"audio_{uuid.uuid4()}.wav"
+
+    # 保存音频文件
+    with open(audio_filename, "wb") as audio_file:
+        audio_file.write(audio_bytes)
+
+    # 这里可以添加音频处理逻辑
+    # 例如：调用语音识别API，分析音频内容等
+
+    # 获取对应的图片描述
+    description = image_description_map.get(image_id, "未找到对应的图片描述")
+
+    # 这里应该添加实际的音频处理逻辑
+    # 暂时返回一个示例消息
+    message = f"音频已处理。图片描述：{description}"
+
+    # 删除临时音频文件
+    os.remove(audio_filename)
+
+    return JSONResponse({"message": message})
 
 # WebSocket 处理
 @app.websocket("/ws")
