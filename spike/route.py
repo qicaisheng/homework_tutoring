@@ -15,7 +15,7 @@ async def get():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>图片上传与语音交互</title>
+        <title>作业辅导陪伴助手</title>
         <script src="https://cdn.jsdelivr.net/npm/@gradio/client"></script>
         <style>
             body {
@@ -103,7 +103,7 @@ async def get():
         </style>
     </head>
     <body>
-        <h1>图片上传与语音交互</h1>
+        <h1>作业辅导陪伴助手</h1>
         <div id="imageUploadArea">
             <p id="uploadText">点击或拖拽图片到此处上传</p>
             <img id="imagePreview" style="display: none;" alt="预览图片" />
