@@ -265,6 +265,7 @@ async def get():
                     document.getElementById("imageIdInput").value = data.imageId;
                     confirmUploadBtn.disabled = false;
                     voiceInteraction.style.display = 'block';
+                    initWebSocket();
                 })
                 .catch(error => {
                     console.error("上传图片时出错:", error);
@@ -272,6 +273,27 @@ async def get():
                     document.getElementById("imageUploadResult").innerHTML = "上传图片失败，请重试。";
                     confirmUploadBtn.disabled = false;
                 });
+            }
+        
+            function initWebSocket() {
+                websocket = new WebSocket('ws://' + window.location.host + '/ws');
+                
+                websocket.onopen = function(event) {
+                    console.log('WebSocket 连接已建立');
+                };
+
+                websocket.onmessage = function(event) {
+                    const audioBlob = event.data;
+                    playAudio(audioBlob);
+                };
+
+                websocket.onerror = function(error) {
+                    console.error('WebSocket 错误:', error);
+                };
+
+                websocket.onclose = function(event) {
+                    console.log('WebSocket 连接已关闭');
+                };
             }
 
             async function startRecording() {
@@ -303,91 +325,36 @@ async def get():
             }
 
             function sendAudioToServer(audioBlob) {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    const imageId = document.getElementById("imageIdInput").value;
-                    const reader = new FileReader();
-                    reader.readAsDataURL(audioBlob);
-                    reader.onloadend = function() {
-                        const base64Audio = reader.result.split(',')[1];
-                        const data = JSON.stringify({
-                            imageId: imageId,
-                            audioData: base64Audio
-                        });
-
-                        fetch('/process_audio', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: data
-                        })
-                        .then(response => response.json())
-                        .then(result => {
-                            startAudioStream();
-                        })
-                        .catch(error => {
-                            console.error('音频处理错误:', error);
-                            document.getElementById("audioProcessing").style.display = "none";
-                            document.getElementById("recordingStatus").innerText = "音频处理失败，请重试。";
-                        });
-                    };
-                }, 300);
+                const imageId = document.getElementById("imageIdInput").value;
+                websocket.send(imageId);
+                websocket.send(audioBlob);
+                document.getElementById("audioProcessing").style.display = "flex";
             }
 
-            let audioQueue = [];
-            let isPlaying = false;
-
-            function startAudioStream() {
-                if (eventSource) {
-                    eventSource.close();
-                }
-                eventSource = new EventSource('/audio_stream');
-                eventSource.onmessage = function(event) {
-                    const audioBase64 = event.data;
-                    audioQueue.push(audioBase64);
-                    if (!isPlaying) {
-                        playNextAudio();
-                    }
-                    if (audioQueue.length > 0) {
-                        document.getElementById("audioProcessing").style.display = "none";
-                    }
+            function playAudio(audioBlob) {
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audioElement = document.createElement('audio');
+                audioElement.src = audioUrl;
+                audioElement.style.display = 'none';
+                const heartbeat = document.createElement('div');
+                heartbeat.className = 'heartbeat';
+                document.getElementById("audioPlayback").innerHTML = '';
+                document.getElementById("audioPlayback").appendChild(heartbeat);
+                document.getElementById("audioPlayback").appendChild(audioElement);
+                
+                audioElement.play().then(() => {
+                    heartbeat.style.display = 'inline-block';
+                    document.getElementById("audioProcessing").style.display = "none";
+                }).catch(e => {
+                    console.error('音频播放失败:', e);
+                    document.getElementById("audioPlaybackError").innerText = "音频播放失败，请重试。";
+                    document.getElementById("audioPlaybackError").style.display = "block";
+                });
+                
+                audioElement.onended = function() {
+                    heartbeat.style.display = 'none';
+                    URL.revokeObjectURL(audioUrl);
                 };
-                eventSource.onerror = function(error) {
-                    console.error('SSE错误:', error);
-                    eventSource.close();
-                };
-            }
-
-            function playNextAudio() {
-                if (audioQueue.length > 0) {
-                    isPlaying = true;
-                    const audioBase64 = audioQueue.shift();
-                    const audioElement = document.createElement('audio');
-                    audioElement.src = audioBase64;
-                    audioElement.style.display = 'none';
-                    const heartbeat = document.createElement('div');
-                    heartbeat.className = 'heartbeat';
-                    document.getElementById("audioPlayback").innerHTML = '';
-                    document.getElementById("audioPlayback").appendChild(heartbeat);
-                    document.getElementById("audioPlayback").appendChild(audioElement);
-                    audioElement.play().then(() => {
-                        heartbeat.style.display = 'inline-block';
-                    }).catch(e => {
-                        console.error('音频播放失败:', e);
-                        document.getElementById("audioPlaybackError").innerText = "音频播放失败，请重试。";
-                        document.getElementById("audioPlaybackError").style.display = "block";
-                        isPlaying = false;
-                        playNextAudio();
-                    });
-                    audioElement.onended = function() {
-                        heartbeat.style.display = 'none';
-                        isPlaying = false;
-                        playNextAudio();
-                    };
-                } else {
-                    isPlaying = false;
-                }
             }
 
             document.getElementById('recordButton').addEventListener('mousedown', startRecording);
