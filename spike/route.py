@@ -28,9 +28,42 @@ async def get():
             h1, h2 {
                 color: #333;
             }
+            #imageUploadArea {
+                width: 100%;
+                height: 300px;
+                border: 2px dashed #ccc;
+                border-radius: 5px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            }
+            #imageUploadArea:hover {
+                border-color: #2196F3;
+            }
+            #imageUploadArea.dragover {
+                background-color: #e3f2fd;
+            }
             #imagePreview {
                 max-width: 100%;
-                height: auto;
+                max-height: 100%;
+                object-fit: contain;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                margin: auto;
+            }
+            #uploadText {
+                position: absolute;
+                z-index: 1;
+            }
+            #confirmUpload {
+                display: none;
                 margin-top: 10px;
             }
             #recordButton {
@@ -67,33 +100,17 @@ async def get():
                 animation: spin 1s linear infinite;
                 margin-right: 10px;
             }
-            #imageUpload {
-                width: 100%;
-                height: 300px;
-                border: 2px dashed #ccc;
-                border-radius: 5px;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-            #imageUpload:hover {
-                border-color: #2196F3;
-            }
-            #imageUpload.dragover {
-                background-color: #e3f2fd;
-            }
         </style>
     </head>
     <body>
         <h1>图片上传与语音交互</h1>
-        <div id="imageUpload">
-            <p>点击或拖拽图片到此处上传</p>
+        <div id="imageUploadArea">
+            <p id="uploadText">点击或拖拽图片到此处上传</p>
+            <img id="imagePreview" style="display: none;" alt="预览图片" />
         </div>
+        <button id="confirmUpload">确认上传</button>
         <div id="loading" class="loading" style="display: none;">正在上传和处理图片...</div>
         <div id="imageUploadResult"></div>
-        <img id="imagePreview" style="display: none;" alt="预览图片" />
         
         <h2>语音交互</h2>
         <p>上传图片后，按住按钮开始录音，松开按钮结束录音。</p>
@@ -108,42 +125,64 @@ async def get():
             let isRecording = false;
             let debounceTimer;
             let eventSource;
+            let selectedFile;
 
-            const imageUpload = document.getElementById('imageUpload');
+            const imageUploadArea = document.getElementById('imageUploadArea');
             const imagePreview = document.getElementById('imagePreview');
+            const uploadText = document.getElementById('uploadText');
+            const confirmUploadBtn = document.getElementById('confirmUpload');
 
-            imageUpload.addEventListener('click', () => {
+            imageUploadArea.addEventListener('click', () => {
                 const input = document.createElement('input');
                 input.type = 'file';
                 input.accept = 'image/*';
                 input.onchange = (e) => {
-                    const file = e.target.files[0];
-                    handleImageUpload(file);
+                    selectedFile = e.target.files[0];
+                    previewImage(selectedFile);
                 };
                 input.click();
             });
 
-            imageUpload.addEventListener('dragover', (e) => {
+            imageUploadArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                imageUpload.classList.add('dragover');
+                imageUploadArea.classList.add('dragover');
             });
 
-            imageUpload.addEventListener('dragleave', () => {
-                imageUpload.classList.remove('dragover');
+            imageUploadArea.addEventListener('dragleave', () => {
+                imageUploadArea.classList.remove('dragover');
             });
 
-            imageUpload.addEventListener('drop', (e) => {
+            imageUploadArea.addEventListener('drop', (e) => {
                 e.preventDefault();
-                imageUpload.classList.remove('dragover');
-                const file = e.dataTransfer.files[0];
-                handleImageUpload(file);
+                imageUploadArea.classList.remove('dragover');
+                selectedFile = e.dataTransfer.files[0];
+                previewImage(selectedFile);
             });
 
-            function handleImageUpload(file) {
+            function previewImage(file) {
                 if (!file) {
                     alert("请选择一张图片");
                     return;
                 }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    uploadText.style.display = 'none';
+                    confirmUploadBtn.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+
+            confirmUploadBtn.addEventListener('click', () => {
+                if (selectedFile) {
+                    handleImageUpload(selectedFile);
+                } else {
+                    alert("请先选择一张图片");
+                }
+            });
+
+            function handleImageUpload(file) {
                 const formData = new FormData();
                 formData.append("image", file);
                 
@@ -160,9 +199,6 @@ async def get():
                     document.getElementById("imageUploadResult").innerHTML = "图片上传成功！图片ID: " + data.imageId + "<br>题目描述: " + data.description;
                     document.getElementById("imageIdInput").value = data.imageId;
                     document.getElementById("recordButton").disabled = false;
-                    
-                    imagePreview.src = URL.createObjectURL(file);
-                    imagePreview.style.display = "block";
                 })
                 .catch(error => {
                     console.error("上传图片时出错:", error);
