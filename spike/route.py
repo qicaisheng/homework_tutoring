@@ -129,6 +129,11 @@ async def get():
                 width: 100%;
                 margin-top: 10px;
             }
+            #audioPlaybackError {
+                color: red;
+                margin-top: 10px;
+                display: none;
+            }
         </style>
     </head>
     <body>
@@ -153,6 +158,7 @@ async def get():
                 <span>思考中...</span>
             </div>
             <div id="audioPlayback"></div>
+            <div id="audioPlaybackError"></div>
         </div>
 
         <script>
@@ -350,6 +356,8 @@ async def get():
                     document.getElementById("audioPlayback").appendChild(audioElement);
                     audioElement.play().catch(e => {
                         console.error('音频播放失败:', e);
+                        document.getElementById("audioPlaybackError").innerText = "音频播放失败，请重试。";
+                        document.getElementById("audioPlaybackError").style.display = "block";
                         isPlaying = false;
                         playNextAudio();
                     });
