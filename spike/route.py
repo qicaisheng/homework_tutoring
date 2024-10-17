@@ -207,6 +207,9 @@ async def get():
                     imagePreview.style.display = 'block';
                     uploadText.style.display = 'none';
                     confirmUploadBtn.style.display = 'block';
+                    // 图片变更后，隐藏语音区域并清空imageId
+                    voiceInteraction.style.display = 'none';
+                    document.getElementById("imageIdInput").value = '';
                 };
                 reader.readAsDataURL(file);
             }
