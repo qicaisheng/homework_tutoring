@@ -324,7 +324,6 @@ async def get():
                         })
                         .then(response => response.json())
                         .then(result => {
-                            document.getElementById("audioProcessing").style.display = "none";
                             startAudioStream();
                         })
                         .catch(error => {
@@ -349,6 +348,9 @@ async def get():
                     audioQueue.push(audioBase64);
                     if (!isPlaying) {
                         playNextAudio();
+                    }
+                    if (audioQueue.length > 0) {
+                        document.getElementById("audioProcessing").style.display = "none";
                     }
                 };
                 eventSource.onerror = function(error) {
