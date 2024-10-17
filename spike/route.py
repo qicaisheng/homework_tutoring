@@ -105,16 +105,6 @@ async def get():
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
             }
-            .audio-icon {
-                display: inline-block;
-                width: 20px;
-                height: 20px;
-                border: 3px solid #f3f3f3;
-                border-top: 3px solid #3498db;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-                margin-right: 10px;
-            }
             .loading-spinner {
                 display: inline-block;
                 width: 40px;
@@ -125,7 +115,7 @@ async def get():
                 animation: spin 1s linear infinite;
                 margin-right: 10px;
             }
-            #loading {
+            #loading, #audioProcessing {
                 text-align: center;
                 display: flex;
                 align-items: center;
@@ -134,6 +124,10 @@ async def get():
             #voiceInteraction {
                 display: none;
                 text-align: center;
+            }
+            #audioPlayback audio {
+                width: 100%;
+                margin-top: 10px;
             }
         </style>
     </head>
@@ -154,6 +148,10 @@ async def get():
             <button id="recordButton">按住对话</button>
             <input type="hidden" id="imageIdInput" />
             <div id="recordingStatus"></div>
+            <div id="audioProcessing" style="display: none;">
+                <div class="loading-spinner"></div>
+                <span>思考中...</span>
+            </div>
             <div id="audioPlayback"></div>
         </div>
 
@@ -274,7 +272,8 @@ async def get():
                 if (isRecording) {
                     mediaRecorder.stop();
                     isRecording = false;
-                    document.getElementById("recordingStatus").innerText = "录音已结束，正在处理...";
+                    document.getElementById("recordingStatus").innerText = "";
+                    document.getElementById("audioProcessing").style.display = "flex";
                 }
             }
 
@@ -300,11 +299,12 @@ async def get():
                         })
                         .then(response => response.json())
                         .then(result => {
-                            document.getElementById("recordingStatus").innerText = "音频处理结果: " + result.message;
+                            document.getElementById("audioProcessing").style.display = "none";
                             startAudioStream();
                         })
                         .catch(error => {
                             console.error('音频处理错误:', error);
+                            document.getElementById("audioProcessing").style.display = "none";
                             document.getElementById("recordingStatus").innerText = "音频处理失败，请重试。";
                         });
                     };
@@ -336,20 +336,22 @@ async def get():
                 if (audioQueue.length > 0) {
                     isPlaying = true;
                     const audioBase64 = audioQueue.shift();
-                    const audio = new Audio(audioBase64);
-                    audio.onended = function() {
+                    const audioElement = document.createElement('audio');
+                    audioElement.src = audioBase64;
+                    audioElement.controls = true;
+                    audioElement.onended = function() {
                         isPlaying = false;
                         playNextAudio();
                     };
-                    audio.play().catch(e => {
+                    document.getElementById("audioPlayback").innerHTML = '';
+                    document.getElementById("audioPlayback").appendChild(audioElement);
+                    audioElement.play().catch(e => {
                         console.error('音频播放失败:', e);
                         isPlaying = false;
                         playNextAudio();
                     });
-                    document.getElementById("audioPlayback").innerHTML = '<span class="audio-icon"></span>正在播放音频...';
                 } else {
                     isPlaying = false;
-                    document.getElementById("audioPlayback").innerHTML = "音频播放完毕";
                 }
             }
 
