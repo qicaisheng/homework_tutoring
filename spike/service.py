@@ -1,5 +1,4 @@
 import asyncio
-import base64
 import io
 import os
 import uuid
@@ -48,30 +47,23 @@ async def process_audio(audio_data, image_id="2890e8fc-66b0-4404-9b00-ffae791be0
             print(f"output_texts: {output_texts}")
             print(f"order: {_order}, tts_text: {segment}")
 
-            audio_base64 = await tts(text=segment)
-            await audio_queue.put(audio_base64)
+            audio_bytes = await tts(text=segment)
+            await audio_queue.put(audio_bytes)
 
 def save_input_audio_file(audio_data):
     audio_filename = f"./audio/audio_{uuid.uuid4()}.wav"
 
-    audio_bytes = base64.b64decode(audio_data)
-
-    audio = AudioSegment.from_file(io.BytesIO(audio_bytes), format="webm")  # 假设格式为 webm，根据实际情况调整
+    audio = AudioSegment.from_file(io.BytesIO(audio_data), format="webm")  # 假设格式为 webm，根据实际情况调整
     
     audio.export(audio_filename, format="wav", codec="pcm_s16le")
     return audio_filename
 
 async def generate_audio_stream():
     while True:
-        audio_base64 = await audio_queue.get()
-        yield f"data: {audio_base64}\n\n"
-
+        audio_bytes = await audio_queue.get()
+        yield audio_bytes
 
 def retryvoice_data():
     filename = "./audio/retryvoice.mp3"
     with open(filename, "rb") as f:
-        audio_base64 = base64.b64encode(f.read()).decode('utf-8')
-    
-    return f"data:audio/mp3;base64,{audio_base64}"
-
-
+        return f.read()

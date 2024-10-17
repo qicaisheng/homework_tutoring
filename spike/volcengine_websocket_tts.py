@@ -162,6 +162,4 @@ def parse_response(res, file):
 async def tts(text: str, voice_type: str = voice_type):
     filename = await submit(text, voice_type)
     with open(filename, "rb") as f:
-        audio_base64 = base64.b64encode(f.read()).decode('utf-8')
-    
-    return f"data:audio/mp3;base64,{audio_base64}"
+        return f.read()

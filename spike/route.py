@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+import asyncio
+from fastapi import WebSocket
 
 from spike import service
 
@@ -407,22 +409,24 @@ async def upload_image(request: Request):
     return JSONResponse({"imageId": image_id, "description": description})
 
 
-@app.post("/process_audio")
-async def process_audio(request: Request):
-    data = await request.json()
-    image_id = data["imageId"]
-    audio_data = data["audioData"]
-
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
     try:
-        await service.process_audio(audio_data, image_id)
-        return JSONResponse({"status": "success", "message": "音频处理成功"})
+        while True:
+            data = await websocket.receive_bytes()
+            image_id = await websocket.receive_text()
+            
+            # 处理音频数据
+            await service.process_audio(data, image_id)
+            
+            # 发送生成的音频
+            async for audio_chunk in service.generate_audio_stream():
+                await websocket.send_bytes(audio_chunk)
     except Exception as e:
-        return JSONResponse({"status": "error", "message": f"音频处理失败: {str(e)}"}, status_code=500)
-
-
-@app.get("/audio_stream")
-async def audio_stream():
-    return StreamingResponse(service.generate_audio_stream(), media_type='text/event-stream')
+        print(f"WebSocket错误: {str(e)}")
+    finally:
+        await websocket.close()
 
 
 if __name__ == "__main__":
