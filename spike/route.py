@@ -414,7 +414,7 @@ async def process_audio(request: Request):
     audio_data = data["audioData"]
 
     try:
-        await service.process_audio(audio_data)
+        await service.process_audio(audio_data, image_id)
         return JSONResponse({"status": "success", "message": "音频处理成功"})
     except Exception as e:
         return JSONResponse({"status": "error", "message": f"音频处理失败: {str(e)}"}, status_code=500)
