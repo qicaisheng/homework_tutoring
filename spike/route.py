@@ -1,11 +1,9 @@
-import json
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 from spike import service
 
 app = FastAPI()
-image_storage = {}  # 存储图片 ID 和文件内容
 
 @app.get("/")
 async def get():
@@ -408,7 +406,7 @@ async def upload_image(request: Request):
 
     return JSONResponse({"imageId": image_id, "description": description})
 
-# 添加处理音频的路由
+
 @app.post("/process_audio")
 async def process_audio(request: Request):
     data = await request.json()
@@ -421,30 +419,11 @@ async def process_audio(request: Request):
     except Exception as e:
         return JSONResponse({"status": "error", "message": f"音频处理失败: {str(e)}"}, status_code=500)
 
+
 @app.get("/audio_stream")
 async def audio_stream():
     return StreamingResponse(service.generate_audio_stream(), media_type='text/event-stream')
 
-
-# WebSocket 处理
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        payload = json.loads(data)
-
-        image_id = payload["imageId"]
-        audio_data = payload["audioData"]
-
-        # 这里进行音频处理（假设返回与图像相关的音频）
-        # 这里的示例代码直接将音频数据返回，可以替换为实际的音频生成逻辑
-        if image_id in image_storage:
-            # 在这里你可以根据 image_id 处理 audio_data
-            generated_audio = audio_data  # 直接返回接收到的音频数据
-            await websocket.send_text(generated_audio)
-        else:
-            await websocket.send_text("Invalid image ID.")
 
 if __name__ == "__main__":
     import uvicorn
