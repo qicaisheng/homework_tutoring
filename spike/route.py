@@ -89,6 +89,8 @@ async def get():
                 font-size: 16px;
                 cursor: pointer;
                 transition: background-color 0.3s;
+                display: block;
+                margin: 20px auto;
             }
             #recordButton:active {
                 background-color: #FF0000;
@@ -131,6 +133,7 @@ async def get():
             }
             #voiceInteraction {
                 display: none;
+                text-align: center;
             }
         </style>
     </head>
