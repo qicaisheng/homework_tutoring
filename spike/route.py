@@ -61,6 +61,7 @@ async def get():
             #uploadText {
                 position: absolute;
                 z-index: 1;
+                text-align: center;
             }
             #confirmUpload {
                 display: none;
@@ -68,6 +69,15 @@ async def get():
                 width: 100%;
                 padding: 15px;
                 font-size: 18px;
+                transition: background-color 0.3s, opacity 0.3s;
+            }
+            #confirmUpload:hover:not(:disabled) {
+                background-color: #1976D2;
+            }
+            #confirmUpload:disabled {
+                background-color: #cccccc;
+                cursor: not-allowed;
+                opacity: 0.7;
             }
             #recordButton {
                 width: 80px;
@@ -111,10 +121,13 @@ async def get():
                 border-top: 4px solid #3498db;
                 border-radius: 50%;
                 animation: spin 1s linear infinite;
-                margin: 0 auto;
+                margin-right: 10px;
             }
             #loading {
                 text-align: center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
         </style>
     </head>
@@ -193,20 +206,25 @@ async def get():
                 reader.readAsDataURL(file);
             }
 
+            let uploadDebounceTimer;
             confirmUploadBtn.addEventListener('click', () => {
-                if (selectedFile) {
-                    handleImageUpload(selectedFile);
-                } else {
-                    alert("请先选择一张图片");
-                }
+                clearTimeout(uploadDebounceTimer);
+                uploadDebounceTimer = setTimeout(() => {
+                    if (selectedFile) {
+                        handleImageUpload(selectedFile);
+                    } else {
+                        alert("请先选择一张图片");
+                    }
+                }, 300);
             });
 
             function handleImageUpload(file) {
                 const formData = new FormData();
                 formData.append("image", file);
                 
-                document.getElementById("loading").style.display = "block";
+                document.getElementById("loading").style.display = "flex";
                 document.getElementById("imageUploadResult").innerHTML = "";
+                confirmUploadBtn.disabled = true;
                 
                 fetch("/upload_image", {
                     method: "POST",
@@ -218,11 +236,13 @@ async def get():
                     document.getElementById("imageUploadResult").innerHTML = "图片上传成功！图片ID: " + data.imageId + "<br>题目描述: " + data.description;
                     document.getElementById("imageIdInput").value = data.imageId;
                     document.getElementById("recordButton").disabled = false;
+                    confirmUploadBtn.disabled = false;
                 })
                 .catch(error => {
                     console.error("上传图片时出错:", error);
                     document.getElementById("loading").style.display = "none";
                     document.getElementById("imageUploadResult").innerHTML = "上传图片失败，请重试。";
+                    confirmUploadBtn.disabled = false;
                 });
             }
 
