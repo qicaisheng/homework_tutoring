@@ -33,21 +33,23 @@ async def process_audio(audio_data, image_id="2890e8fc-66b0-4404-9b00-ffae791be0
     audio_filename = save_input_audio_file(audio_data)
 
     input_text = await recognize(audio_filename)
+    if input_text == "":
+        await audio_queue.put(retryvoice_data())
+    else:
+        stream_response = llm_reply(input_text, image_description_map[image_id])
 
-    stream_response = llm_reply(input_text, image_description_map[image_id])
+        segments = segment_text(stream_response, segment_size=2)
 
-    segments = segment_text(stream_response, segment_size=2)
+        output_texts = ""
+        _order = 0
 
-    output_texts = ""
-    _order = 0
+        for segment in segments:
+            output_texts += segment
+            print(f"output_texts: {output_texts}")
+            print(f"order: {_order}, tts_text: {segment}")
 
-    for segment in segments:
-        output_texts += segment
-        print(f"output_texts: {output_texts}")
-        print(f"order: {_order}, tts_text: {segment}")
-
-        audio_base64 = await tts(text=segment)
-        await audio_queue.put(audio_base64)
+            audio_base64 = await tts(text=segment)
+            await audio_queue.put(audio_base64)
 
 def save_input_audio_file(audio_data):
     audio_filename = f"./audio/audio_{uuid.uuid4()}.wav"
@@ -63,4 +65,13 @@ async def generate_audio_stream():
     while True:
         audio_base64 = await audio_queue.get()
         yield f"data: {audio_base64}\n\n"
+
+
+def retryvoice_data():
+    filename = "./audio/retryvoice.mp3"
+    with open(filename, "rb") as f:
+        audio_base64 = base64.b64encode(f.read()).decode('utf-8')
+    
+    return f"data:audio/mp3;base64,{audio_base64}"
+
 
