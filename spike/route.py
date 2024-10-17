@@ -16,6 +16,7 @@ async def get():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>图片上传与语音交互</title>
+        <script src="https://cdn.jsdelivr.net/npm/@gradio/client"></script>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -49,7 +50,7 @@ async def get():
             .loading, #imageUploadResult, #recordingStatus, #audioPlayback {
                 margin-top: 10px;
             }
-            input[type="file"], button {
+            button {
                 margin-top: 10px;
             }
             @keyframes spin {
@@ -66,12 +67,30 @@ async def get():
                 animation: spin 1s linear infinite;
                 margin-right: 10px;
             }
+            #imageUpload {
+                width: 100%;
+                height: 300px;
+                border: 2px dashed #ccc;
+                border-radius: 5px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            #imageUpload:hover {
+                border-color: #2196F3;
+            }
+            #imageUpload.dragover {
+                background-color: #e3f2fd;
+            }
         </style>
     </head>
     <body>
         <h1>图片上传与语音交互</h1>
-        <input type="file" id="imageInput" accept="image/*" />
-        <button onclick="uploadImage()">上传图片</button>
+        <div id="imageUpload">
+            <p>点击或拖拽图片到此处上传</p>
+        </div>
         <div id="loading" class="loading" style="display: none;">正在上传和处理图片...</div>
         <div id="imageUploadResult"></div>
         <img id="imagePreview" style="display: none;" alt="预览图片" />
@@ -90,9 +109,37 @@ async def get():
             let debounceTimer;
             let eventSource;
 
-            function uploadImage() {
-                const input = document.getElementById("imageInput");
-                const file = input.files[0];
+            const imageUpload = document.getElementById('imageUpload');
+            const imagePreview = document.getElementById('imagePreview');
+
+            imageUpload.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    handleImageUpload(file);
+                };
+                input.click();
+            });
+
+            imageUpload.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                imageUpload.classList.add('dragover');
+            });
+
+            imageUpload.addEventListener('dragleave', () => {
+                imageUpload.classList.remove('dragover');
+            });
+
+            imageUpload.addEventListener('drop', (e) => {
+                e.preventDefault();
+                imageUpload.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                handleImageUpload(file);
+            });
+
+            function handleImageUpload(file) {
                 if (!file) {
                     alert("请选择一张图片");
                     return;
@@ -114,9 +161,8 @@ async def get():
                     document.getElementById("imageIdInput").value = data.imageId;
                     document.getElementById("recordButton").disabled = false;
                     
-                    const preview = document.getElementById("imagePreview");
-                    preview.src = URL.createObjectURL(file);
-                    preview.style.display = "block";
+                    imagePreview.src = URL.createObjectURL(file);
+                    imagePreview.style.display = "block";
                 })
                 .catch(error => {
                     console.error("上传图片时出错:", error);
