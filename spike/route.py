@@ -65,6 +65,9 @@ async def get():
             #confirmUpload {
                 display: none;
                 margin-top: 10px;
+                width: 100%;
+                padding: 15px;
+                font-size: 18px;
             }
             #recordButton {
                 width: 80px;
@@ -100,6 +103,19 @@ async def get():
                 animation: spin 1s linear infinite;
                 margin-right: 10px;
             }
+            .loading-spinner {
+                display: inline-block;
+                width: 40px;
+                height: 40px;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #3498db;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto;
+            }
+            #loading {
+                text-align: center;
+            }
         </style>
     </head>
     <body>
@@ -108,8 +124,11 @@ async def get():
             <p id="uploadText">点击或拖拽图片到此处上传</p>
             <img id="imagePreview" style="display: none;" alt="预览图片" />
         </div>
-        <button id="confirmUpload">确认上传</button>
-        <div id="loading" class="loading" style="display: none;">正在上传和处理图片...</div>
+        <button id="confirmUpload" style="background-color: #2196F3; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">确认上传</button>
+        <div id="loading" class="loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <span>正在上传和处理图片...</span>
+        </div>
         <div id="imageUploadResult"></div>
         
         <h2>语音交互</h2>
