@@ -129,6 +129,9 @@ async def get():
                 align-items: center;
                 justify-content: center;
             }
+            #voiceInteraction {
+                display: none;
+            }
         </style>
     </head>
     <body>
@@ -142,14 +145,15 @@ async def get():
             <div class="loading-spinner"></div>
             <span>正在上传和处理图片...</span>
         </div>
-        <div id="imageUploadResult"></div>
         
-        <h2>语音交互</h2>
-        <p>上传图片后，按住按钮开始录音，松开按钮结束录音。</p>
-        <button id="recordButton">按住录音</button>
-        <input type="hidden" id="imageIdInput" />
-        <div id="recordingStatus"></div>
-        <div id="audioPlayback"></div>
+        <div id="voiceInteraction" style="display: none;">
+            <h2>语音交互</h2>
+            <p>按住按钮开始录音，松开按钮结束录音。</p>
+            <button id="recordButton">按住录音</button>
+            <input type="hidden" id="imageIdInput" />
+            <div id="recordingStatus"></div>
+            <div id="audioPlayback"></div>
+        </div>
 
         <script>
             let mediaRecorder;
@@ -163,6 +167,7 @@ async def get():
             const imagePreview = document.getElementById('imagePreview');
             const uploadText = document.getElementById('uploadText');
             const confirmUploadBtn = document.getElementById('confirmUpload');
+            const voiceInteraction = document.getElementById('voiceInteraction');
 
             imageUploadArea.addEventListener('click', () => {
                 const input = document.createElement('input');
@@ -223,7 +228,6 @@ async def get():
                 formData.append("image", file);
                 
                 document.getElementById("loading").style.display = "flex";
-                document.getElementById("imageUploadResult").innerHTML = "";
                 confirmUploadBtn.disabled = true;
                 
                 fetch("/upload_image", {
@@ -233,10 +237,9 @@ async def get():
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById("loading").style.display = "none";
-                    document.getElementById("imageUploadResult").innerHTML = "图片上传成功！图片ID: " + data.imageId + "<br>题目描述: " + data.description;
                     document.getElementById("imageIdInput").value = data.imageId;
-                    document.getElementById("recordButton").disabled = false;
                     confirmUploadBtn.disabled = false;
+                    voiceInteraction.style.display = 'block';
                 })
                 .catch(error => {
                     console.error("上传图片时出错:", error);
