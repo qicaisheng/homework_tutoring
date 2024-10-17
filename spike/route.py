@@ -137,19 +137,18 @@ async def get():
     <body>
         <h1>作业辅导陪伴助手</h1>
         <div id="imageUploadArea">
-            <p id="uploadText">点击或拖拽图片到此处上传</p>
+            <p id="uploadText">上传作业图片</p>
             <img id="imagePreview" style="display: none;" alt="预览图片" />
         </div>
         <button id="confirmUpload" style="background-color: #2196F3; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">确认上传</button>
         <div id="loading" class="loading" style="display: none;">
             <div class="loading-spinner"></div>
-            <span>正在上传和处理图片...</span>
+            <span>正在上传和识别图片...</span>
         </div>
         
         <div id="voiceInteraction" style="display: none;">
-            <h2>语音交互</h2>
-            <p>按住按钮开始录音，松开按钮结束录音。</p>
-            <button id="recordButton">按住录音</button>
+            <p>图片识别成功，按住按钮开始对话</p>
+            <button id="recordButton">按住对话</button>
             <input type="hidden" id="imageIdInput" />
             <div id="recordingStatus"></div>
             <div id="audioPlayback"></div>
