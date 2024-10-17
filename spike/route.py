@@ -125,14 +125,30 @@ async def get():
                 display: none;
                 text-align: center;
             }
-            #audioPlayback audio {
+            #audioPlayback {
                 width: 100%;
                 margin-top: 10px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
             }
             #audioPlaybackError {
                 color: red;
                 margin-top: 10px;
                 display: none;
+            }
+            @keyframes heartbeat {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); }
+            }
+            .heartbeat {
+                width: 50px;
+                height: 50px;
+                background-color: #ff4757;
+                border-radius: 50%;
+                display: inline-block;
+                animation: heartbeat 1s infinite;
             }
         </style>
     </head>
@@ -347,20 +363,26 @@ async def get():
                     const audioBase64 = audioQueue.shift();
                     const audioElement = document.createElement('audio');
                     audioElement.src = audioBase64;
-                    audioElement.controls = true;
-                    audioElement.onended = function() {
-                        isPlaying = false;
-                        playNextAudio();
-                    };
+                    audioElement.style.display = 'none';
+                    const heartbeat = document.createElement('div');
+                    heartbeat.className = 'heartbeat';
                     document.getElementById("audioPlayback").innerHTML = '';
+                    document.getElementById("audioPlayback").appendChild(heartbeat);
                     document.getElementById("audioPlayback").appendChild(audioElement);
-                    audioElement.play().catch(e => {
+                    audioElement.play().then(() => {
+                        heartbeat.style.display = 'inline-block';
+                    }).catch(e => {
                         console.error('音频播放失败:', e);
                         document.getElementById("audioPlaybackError").innerText = "音频播放失败，请重试。";
                         document.getElementById("audioPlaybackError").style.display = "block";
                         isPlaying = false;
                         playNextAudio();
                     });
+                    audioElement.onended = function() {
+                        heartbeat.style.display = 'none';
+                        isPlaying = false;
+                        playNextAudio();
+                    };
                 } else {
                     isPlaying = false;
                 }
