@@ -1,5 +1,8 @@
+import asyncio
 import base64
+from concurrent.futures import ThreadPoolExecutor
 import os
+from typing import AsyncGenerator, Generator
 from openai import OpenAI
 
 client = OpenAI(
@@ -11,12 +14,22 @@ def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-def analyze_image(image) -> str:
+
+async def analyze_image_async(image_path) -> AsyncGenerator[str, None]:
+    executor = ThreadPoolExecutor()
+
+    loop = asyncio.get_event_loop()
+    for chunk in await loop.run_in_executor(executor, analyze_image, image_path):
+        yield chunk
+
+        
+def analyze_image(image) -> Generator[str, None, None]:
     print(f"接收到的图片路径: {image}")
     
     # 确保文件存在
     if not os.path.exists(image):
-        return f"错误：文件 '{image}' 不存在"
+        yield f"错误：文件 '{image}' 不存在"
+        return
     
     try:
         base64_image = encode_image(image)
@@ -38,8 +51,13 @@ def analyze_image(image) -> str:
                         }
                     ]
                 }
-            ]
+            ],
+            stream=True
         )
-        return response.choices[0].message.content
+        partial_message = ""
+        for chunk in response:
+            if chunk.choices[0].delta.content:
+                partial_message += chunk.choices[0].delta.content
+                yield chunk.choices[0].delta.content
     except Exception as e:
-        return f"分析图片时出错：{str(e)}"
+        yield f"分析图片时出错：{str(e)}"
