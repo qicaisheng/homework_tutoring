@@ -161,6 +161,7 @@
         <p>图片识别成功，按住按钮开始对话</p>
         <button id="recordButton">按住对话</button>
         <input type="hidden" id="imageIdInput" />
+        <input type="hidden" id="userIdInput" />
         <div id="recordingStatus"></div>
         <div id="audioProcessing" style="display: none;">
             <div class="loading-spinner"></div>
@@ -182,6 +183,21 @@
         let isPlaying = false;
         let websocket;
         let isWebSocketReady = false;
+        let userId;
+
+        // 生成唯一的用户ID
+        function generateUserId() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // 页面加载时生成用户ID
+        document.addEventListener('DOMContentLoaded', function() {
+            userId = generateUserId();
+            document.getElementById('userIdInput').value = userId;
+        });
 
         const imageUploadArea = document.getElementById('imageUploadArea');
         const imagePreview = document.getElementById('imagePreview');
@@ -251,6 +267,7 @@
         function handleImageUpload(file) {
             const formData = new FormData();
             formData.append("image", file);
+            formData.append("user_id", userId);
             
             loadingElement.style.display = "flex";
             confirmUploadBtn.disabled = true;
@@ -274,7 +291,7 @@
         }
     
         function initWebSocket() {
-            websocket = new WebSocket('ws://' + window.location.host + '/ws');
+            websocket = new WebSocket('ws://' + window.location.host + '/ws?user_id=' + userId);
             
             websocket.onopen = function(event) {
                 console.log('WebSocket 连接已建立');
@@ -373,7 +390,11 @@
                 return;
             }
             const imageId = document.getElementById("imageIdInput").value;
-            websocket.send(imageId);
+            websocket.send(JSON.stringify({
+                type: "audio_data",
+                image_id: imageId,
+                user_id: userId
+            }));
             websocket.send(audioBlob);
             document.getElementById("audioProcessing").style.display = "flex";
         }
