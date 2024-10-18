@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 import asyncio
 from fastapi import WebSocket
@@ -376,24 +376,31 @@ async def upload_image(request: Request):
     return JSONResponse({"imageId": image_id, "description": description})
 
 
+from asyncio import Queue
+from starlette.websockets import WebSocketDisconnect
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    audio_queue = Queue()
+    
     try:
         while True:
-            data = await websocket.receive_bytes()
             image_id = await websocket.receive_text()
+            data = await websocket.receive_bytes()
             
             # 处理音频数据
-            await service.process_audio(data, image_id)
+            await service.process_audio(data, image_id, audio_queue)
             
             # 发送生成的音频
-            async for audio_chunk in service.generate_audio_stream():
+            while not audio_queue.empty():
+                audio_chunk = await audio_queue.get()
                 await websocket.send_bytes(audio_chunk)
+                
+    except WebSocketDisconnect:
+        print("WebSocket 连接已断开")
     except Exception as e:
-        print(f"WebSocket错误: {str(e)}")
-    finally:
-        await websocket.close()
+        print(f"WebSocket错误: {e}")
 
 
 if __name__ == "__main__":
