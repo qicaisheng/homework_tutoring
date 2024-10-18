@@ -15,22 +15,20 @@ def encode_image(image_path):
         return base64.b64encode(image_file.read()).decode('utf-8')
 
 
-async def analyze_image_async(image_path) -> AsyncGenerator[str, None]:
+async def analyze_image_async(image_path) -> str:
     executor = ThreadPoolExecutor()
 
     loop = asyncio.get_event_loop()
-    for chunk in await loop.run_in_executor(executor, analyze_image, image_path):
-        yield chunk
+    description = await loop.run_in_executor(executor, analyze_image, image_path)
+    return description
 
         
-def analyze_image(image) -> Generator[str, None, None]:
+def analyze_image(image) -> str:
     print(f"接收到的图片路径: {image}")
     
     # 确保文件存在
     if not os.path.exists(image):
-        yield f"错误：文件 '{image}' 不存在"
-        return
-    
+        return f"错误：文件 '{image}' 不存在"    
     try:
         base64_image = encode_image(image)
         response = client.chat.completions.create(
@@ -51,13 +49,8 @@ def analyze_image(image) -> Generator[str, None, None]:
                         }
                     ]
                 }
-            ],
-            stream=True
+            ]
         )
-        partial_message = ""
-        for chunk in response:
-            if chunk.choices[0].delta.content:
-                partial_message += chunk.choices[0].delta.content
-                yield chunk.choices[0].delta.content
+        return response.choices[0].message.content
     except Exception as e:
-        yield f"分析图片时出错：{str(e)}"
+        return f"分析图片时出错：{str(e)}"

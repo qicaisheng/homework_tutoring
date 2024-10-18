@@ -29,8 +29,8 @@ async def upload_image(image):
 async def process_image(image_id, temp_image_path):
     try:
         image_description_map[image_id] = ""
-        async for description_chunk in analyze_image_async(temp_image_path):
-            image_description_map[image_id] += description_chunk
+        description = await analyze_image_async(temp_image_path)
+        image_description_map[image_id] = description
     finally:
         os.remove(temp_image_path)
 
