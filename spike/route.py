@@ -382,20 +382,14 @@ from starlette.websockets import WebSocketDisconnect
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    audio_queue = Queue()
     
     try:
         while True:
             image_id = await websocket.receive_text()
             data = await websocket.receive_bytes()
             
-            # 处理音频数据
-            await service.process_audio(data, image_id, audio_queue)
-            
-            # 发送生成的音频
-            while not audio_queue.empty():
-                audio_chunk = await audio_queue.get()
-                await websocket.send_bytes(audio_chunk)
+            # 处理音频数据并直接发送响应
+            await service.process_audio(data, image_id, websocket)
                 
     except WebSocketDisconnect:
         print("WebSocket 连接已断开")

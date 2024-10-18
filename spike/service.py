@@ -27,12 +27,12 @@ def upload_image(image):
     return image_id, description
 
 
-async def process_audio(audio_data, image_id, audio_queue: asyncio.Queue):
+async def process_audio(audio_data, image_id, websocket):
     audio_filename = save_input_audio_file(audio_data)
 
     input_text = await recognize(audio_filename)
     if input_text == "":
-        await audio_queue.put(retryvoice_data())
+        await websocket.send_bytes(retryvoice_data())
     else:
         stream_response = llm_reply(input_text, image_description_map[image_id])
 
@@ -48,7 +48,10 @@ async def process_audio(audio_data, image_id, audio_queue: asyncio.Queue):
             print(f"order: {_order}, tts_text: {segment}")
 
             audio_bytes = await tts(text=segment)
-            await audio_queue.put(audio_bytes)
+            await websocket.send_bytes(audio_bytes)
+
+    # 清理临时音频文件
+    os.remove(audio_filename)
 
 def save_input_audio_file(audio_data):
     audio_filename = f"./audio/audio_{uuid.uuid4()}.wav"
