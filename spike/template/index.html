@@ -273,10 +273,27 @@
             };
 
             websocket.onmessage = function(event) {
-                const audioBlob = event.data;
-                audioQueue.push(audioBlob);
-                if (!isPlaying) {
-                    playNextAudio();
+                if (event.data instanceof Blob) {
+                    // 二进制数据（音频）
+                    audioQueue.push(event.data);
+                    if (!isPlaying) {
+                        playNextAudio();
+                    }
+                } else {
+                    // 文本数据（JSON 消息）
+                    try {
+                        const message = JSON.parse(event.data);
+                        if (message.type === "error") {
+                            alert(message.message);
+                            websocket.close();
+                            resetUIState();
+                            initWebSocket();
+                        } else {
+                            console.log("未知消息类型:", message.type);
+                        }
+                    } catch (e) {
+                        console.error("解析消息时出错:", e);
+                    }
                 }
             };
 
@@ -287,6 +304,15 @@
             websocket.onclose = function(event) {
                 console.log('WebSocket 连接已关闭');
             };
+        }
+
+        function resetUIState() {
+            // 重置UI状态的代码
+            // 例如：清空对话历史，重置输入框等
+            document.getElementById("audioProcessing").style.display = "none";
+            document.getElementById("audioPlayback").innerHTML = '';
+            document.getElementById("audioPlaybackError").style.display = "none";
+            // 可能还需要重置其他UI元素
         }
 
         async function startRecording() {

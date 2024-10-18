@@ -3,6 +3,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi import WebSocket
 from starlette.websockets import WebSocketDisconnect
 from spike import service
+import json
+import base64
 
 
 app = FastAPI()
@@ -24,20 +26,18 @@ async def upload_image(request: Request):
     return JSONResponse({"imageId": image_id})
 
 
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     
-    try:
-        while True:
+    while True:
+        try:
             image_id = await websocket.receive_text()
             data = await websocket.receive_bytes()
             await service.process_audio(data, image_id, websocket)
-    except WebSocketDisconnect:
-        print("WebSocket 连接已断开")
-    except Exception as e:
-        print(f"WebSocket错误: {e}")
+        except Exception as e:
+            print(f"WebSocket 处理时发生错误: {e}")
+            break  # 
 
 
 if __name__ == "__main__":
