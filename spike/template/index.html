@@ -138,6 +138,11 @@
             display: inline-block;
             animation: heartbeat 1s infinite;
         }
+        #errorMessage {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -163,6 +168,7 @@
         </div>
         <div id="audioPlayback"></div>
         <div id="audioPlaybackError"></div>
+        <div id="errorMessage"></div>
     </div>
 
     <script>
@@ -180,6 +186,7 @@
         const uploadText = document.getElementById('uploadText');
         const confirmUploadBtn = document.getElementById('confirmUpload');
         const voiceInteraction = document.getElementById('voiceInteraction');
+        const errorMessageElement = document.getElementById('errorMessage');
 
         imageUploadArea.addEventListener('click', () => {
             const input = document.createElement('input');
@@ -284,7 +291,8 @@
                     try {
                         const message = JSON.parse(event.data);
                         if (message.type === "error") {
-                            alert(message.message);
+                            errorMessageElement.textContent = message.message;
+                            errorMessageElement.style.display = "block";
                             websocket.close();
                             resetUIState();
                             initWebSocket();
@@ -299,6 +307,8 @@
 
             websocket.onerror = function(error) {
                 console.error('WebSocket 错误:', error);
+                errorMessageElement.textContent = "连接出错，请重试";
+                errorMessageElement.style.display = "block";
             };
 
             websocket.onclose = function(event) {
@@ -312,6 +322,7 @@
             document.getElementById("audioProcessing").style.display = "none";
             document.getElementById("audioPlayback").innerHTML = '';
             document.getElementById("audioPlaybackError").style.display = "none";
+            errorMessageElement.style.display = "none";
             // 可能还需要重置其他UI元素
         }
 

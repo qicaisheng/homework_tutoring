@@ -44,7 +44,7 @@ async def process_audio(audio_data, image_id, websocket):
         if input_text == "":
             await websocket.send_bytes(retryvoice_data())
         else:
-            stream_response = llm_reply(input_text, image_description_map[image_id])
+            stream_response = llm_reply(input_text, image_description_map.get(image_id, ""))
 
             segments = segment_text(stream_response, segment_size=2)
 
