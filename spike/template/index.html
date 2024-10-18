@@ -180,6 +180,8 @@
         let selectedFile;
         let audioQueue = [];
         let isPlaying = false;
+        let websocket;
+        let isWebSocketReady = false;
 
         const imageUploadArea = document.getElementById('imageUploadArea');
         const imagePreview = document.getElementById('imagePreview');
@@ -187,6 +189,7 @@
         const confirmUploadBtn = document.getElementById('confirmUpload');
         const voiceInteraction = document.getElementById('voiceInteraction');
         const errorMessageElement = document.getElementById('errorMessage');
+        const loadingElement = document.getElementById('loading');
 
         imageUploadArea.addEventListener('click', () => {
             const input = document.createElement('input');
@@ -249,7 +252,7 @@
             const formData = new FormData();
             formData.append("image", file);
             
-            document.getElementById("loading").style.display = "flex";
+            loadingElement.style.display = "flex";
             confirmUploadBtn.disabled = true;
             
             fetch("/upload_image", {
@@ -258,15 +261,13 @@
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById("loading").style.display = "none";
                 document.getElementById("imageIdInput").value = data.imageId;
                 confirmUploadBtn.disabled = false;
-                voiceInteraction.style.display = 'block';
                 initWebSocket();
             })
             .catch(error => {
                 console.error("上传图片时出错:", error);
-                document.getElementById("loading").style.display = "none";
+                loadingElement.style.display = "none";
                 document.getElementById("imageUploadResult").innerHTML = "上传图片失败，请重试。";
                 confirmUploadBtn.disabled = false;
             });
@@ -277,6 +278,9 @@
             
             websocket.onopen = function(event) {
                 console.log('WebSocket 连接已建立');
+                isWebSocketReady = true;
+                loadingElement.style.display = "none";
+                voiceInteraction.style.display = 'block';
             };
 
             websocket.onmessage = function(event) {
@@ -309,24 +313,33 @@
                 console.error('WebSocket 错误:', error);
                 errorMessageElement.textContent = "连接出错，请重试";
                 errorMessageElement.style.display = "block";
+                isWebSocketReady = false;
+                loadingElement.style.display = "none";
             };
 
             websocket.onclose = function(event) {
                 console.log('WebSocket 连接已关闭');
+                isWebSocketReady = false;
+                loadingElement.style.display = "none";
             };
         }
 
         function resetUIState() {
             // 重置UI状态的代码
-            // 例如：清空对话历史，重置输入框等
             document.getElementById("audioProcessing").style.display = "none";
             document.getElementById("audioPlayback").innerHTML = '';
             document.getElementById("audioPlaybackError").style.display = "none";
             errorMessageElement.style.display = "none";
-            // 可能还需要重置其他UI元素
+            voiceInteraction.style.display = "none";
+            isWebSocketReady = false;
+            loadingElement.style.display = "none";
         }
 
         async function startRecording() {
+            if (!isWebSocketReady) {
+                alert("WebSocket 连接尚未就绪，请稍后再试。");
+                return;
+            }
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
             audioChunks = [];
@@ -355,6 +368,10 @@
         }
 
         function sendAudioToServer(audioBlob) {
+            if (!isWebSocketReady) {
+                alert("WebSocket 连接已断开，请刷新页面重试。");
+                return;
+            }
             const imageId = document.getElementById("imageIdInput").value;
             websocket.send(imageId);
             websocket.send(audioBlob);

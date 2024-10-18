@@ -3,8 +3,6 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi import WebSocket
 from starlette.websockets import WebSocketDisconnect
 from spike import service
-import json
-import base64
 
 
 app = FastAPI()
