@@ -184,6 +184,8 @@ async def get():
             let debounceTimer;
             let eventSource;
             let selectedFile;
+            let audioQueue = [];
+            let isPlaying = false;
 
             const imageUploadArea = document.getElementById('imageUploadArea');
             const imagePreview = document.getElementById('imagePreview');
@@ -284,7 +286,10 @@ async def get():
 
                 websocket.onmessage = function(event) {
                     const audioBlob = event.data;
-                    playAudio(audioBlob);
+                    audioQueue.push(audioBlob);
+                    if (!isPlaying) {
+                        playNextAudio();
+                    }
                 };
 
                 websocket.onerror = function(error) {
@@ -331,7 +336,15 @@ async def get():
                 document.getElementById("audioProcessing").style.display = "flex";
             }
 
+            function playNextAudio() {
+                if (audioQueue.length > 0 && !isPlaying) {
+                    const audioBlob = audioQueue.shift();
+                    playAudio(audioBlob);
+                }
+            }
+
             function playAudio(audioBlob) {
+                isPlaying = true;
                 const audioUrl = URL.createObjectURL(audioBlob);
                 const audioElement = document.createElement('audio');
                 audioElement.src = audioUrl;
@@ -349,11 +362,15 @@ async def get():
                     console.error('音频播放失败:', e);
                     document.getElementById("audioPlaybackError").innerText = "音频播放失败，请重试。";
                     document.getElementById("audioPlaybackError").style.display = "block";
+                    isPlaying = false;
+                    playNextAudio();
                 });
                 
                 audioElement.onended = function() {
                     heartbeat.style.display = 'none';
                     URL.revokeObjectURL(audioUrl);
+                    isPlaying = false;
+                    playNextAudio();
                 };
             }
 
