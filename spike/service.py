@@ -1,4 +1,3 @@
-import asyncio
 import io
 import os
 import uuid
@@ -61,10 +60,6 @@ def save_input_audio_file(audio_data):
     audio.export(audio_filename, format="wav", codec="pcm_s16le")
     return audio_filename
 
-async def generate_audio_stream():
-    while True:
-        audio_bytes = await audio_queue.get()
-        yield audio_bytes
 
 def retryvoice_data():
     filename = "./audio/retryvoice.mp3"
