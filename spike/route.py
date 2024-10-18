@@ -19,9 +19,9 @@ async def upload_image(request: Request):
     form = await request.form()
     image = form["image"]
     
-    image_id, description = service.upload_image(image)
+    image_id = await service.upload_image(image)
 
-    return JSONResponse({"imageId": image_id, "description": description})
+    return JSONResponse({"imageId": image_id})
 
 
 
