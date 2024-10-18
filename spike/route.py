@@ -18,6 +18,7 @@ async def get():
 async def upload_image(request: Request):
     form = await request.form()
     image = form["image"]
+    user_id = form["user_id"]
     
     image_id = await service.upload_image(image)
 
@@ -30,9 +31,11 @@ async def websocket_endpoint(websocket: WebSocket):
     
     while True:
         try:
-            image_id = await websocket.receive_text()
-            data = await websocket.receive_bytes()
-            await service.process_audio(data, image_id, websocket)
+            json = await websocket.receive_json()
+            image_id = json["image_id"]
+            user_id = json["user_id"]
+            audio = await websocket.receive_bytes()
+            await service.process_audio(audio, user_id, image_id, websocket)
         except Exception as e:
             print(f"WebSocket 处理时发生错误: {e}")
             break  # 
