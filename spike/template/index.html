@@ -376,8 +376,8 @@
 
             mediaRecorder.start();
             isRecording = true;
-            document.getElementById("recordingStatus").innerText = "正在录音...";
-            document.getElementById("recordButton").innerText = "停止录音";
+            document.getElementById("recordingStatus").innerText = "正在听你说话...";
+            document.getElementById("recordButton").innerText = "停止说话";
         }
 
         function stopRecording() {
@@ -386,7 +386,7 @@
                 isRecording = false;
                 document.getElementById("recordingStatus").innerText = "";
                 document.getElementById("audioProcessing").style.display = "flex";
-                document.getElementById("recordButton").innerText = "开始对话";
+                document.getElementById("recordButton").innerText = "开始说话";
             }
         }
 
