@@ -184,6 +184,7 @@
         let websocket;
         let isWebSocketReady = false;
         let userId;
+        let currentAudioElement;
 
         // 生成唯一的用户ID
         function generateUserId() {
@@ -359,6 +360,12 @@
                 initWebSocket();
                 return;
             }
+            if (isPlaying && currentAudioElement) {
+                currentAudioElement.pause();
+                currentAudioElement.currentTime = 0;
+                isPlaying = false;
+                document.getElementById("audioPlayback").innerHTML = '';
+            }
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
             audioChunks = [];
@@ -424,6 +431,8 @@
             document.getElementById("audioPlayback").appendChild(heartbeat);
             document.getElementById("audioPlayback").appendChild(audioElement);
             
+            currentAudioElement = audioElement;
+            
             audioElement.play().then(() => {
                 heartbeat.style.display = 'inline-block';
                 document.getElementById("audioProcessing").style.display = "none";
@@ -439,6 +448,7 @@
                 heartbeat.style.display = 'none';
                 URL.revokeObjectURL(audioUrl);
                 isPlaying = false;
+                currentAudioElement = null;
                 playNextAudio();
             };
         }
