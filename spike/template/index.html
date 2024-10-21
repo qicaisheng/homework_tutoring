@@ -8,17 +8,19 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 100%;
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px;
             line-height: 1.6;
         }
         h1, h2 {
             color: #333;
+            font-size: 24px;
+            text-align: center;
         }
         #imageUploadArea {
             width: 100%;
-            height: 300px;
+            height: 200px;
             border: 2px dashed #ccc;
             border-radius: 5px;
             display: flex;
@@ -79,6 +81,7 @@
             transition: background-color 0.3s;
             display: block;
             margin: 20px auto;
+            -webkit-tap-highlight-color: transparent;
         }
         #recordButton:active {
             background-color: #FF0000;
@@ -151,15 +154,15 @@
         <p id="uploadText">上传作业图片</p>
         <img id="imagePreview" style="display: none;" alt="预览图片" />
     </div>
-    <button id="confirmUpload" style="background-color: #2196F3; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">确认上传</button>
+    <button id="confirmUpload" style="background-color: #2196F3; color: white; border: none; padding: 15px 20px; border-radius: 5px; cursor: pointer; font-size: 16px;">确认上传</button>
     <div id="loading" class="loading" style="display: none;">
         <div class="loading-spinner"></div>
         <span>正在上传和识别图片...</span>
     </div>
     
     <div id="voiceInteraction" style="display: none;">
-        <p>图片识别成功，按住按钮开始对话</p>
-        <button id="recordButton">按住对话</button>
+        <p>图片识别成功，点击按钮开始对话</p>
+        <button id="recordButton">开始对话</button>
         <input type="hidden" id="imageIdInput" />
         <input type="hidden" id="userIdInput" />
         <div id="recordingStatus"></div>
@@ -211,6 +214,7 @@
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
+            input.capture = 'camera';
             input.onchange = (e) => {
                 selectedFile = e.target.files[0];
                 previewImage(selectedFile);
@@ -373,6 +377,7 @@
             mediaRecorder.start();
             isRecording = true;
             document.getElementById("recordingStatus").innerText = "正在录音...";
+            document.getElementById("recordButton").innerText = "停止录音";
         }
 
         function stopRecording() {
@@ -381,6 +386,7 @@
                 isRecording = false;
                 document.getElementById("recordingStatus").innerText = "";
                 document.getElementById("audioProcessing").style.display = "flex";
+                document.getElementById("recordButton").innerText = "开始对话";
             }
         }
 
@@ -437,9 +443,13 @@
             };
         }
 
-        document.getElementById('recordButton').addEventListener('mousedown', startRecording);
-        document.getElementById('recordButton').addEventListener('mouseup', stopRecording);
-        document.getElementById('recordButton').addEventListener('mouseleave', stopRecording);
+        document.getElementById('recordButton').addEventListener('click', function() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
     </script>
 </body>
 </html>
