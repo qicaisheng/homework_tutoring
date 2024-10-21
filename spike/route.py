@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi import WebSocket
 from starlette.websockets import WebSocketDisconnect
 from spike import service
+import time
 
 
 app = FastAPI()
@@ -31,10 +32,14 @@ async def websocket_endpoint(websocket: WebSocket):
     
     while True:
         try:
+            start_time = time.time()
             json = await websocket.receive_json()
             image_id = json["image_id"]
             user_id = json["user_id"]
             audio = await websocket.receive_bytes()
+            end_time = time.time()
+            print(f"WebSocket 接收数据耗时: {end_time - start_time:.2f}秒")
+
             await service.process_audio(audio, user_id, image_id, websocket)
         except Exception as e:
             print(f"WebSocket 处理时发生错误: {e}")

@@ -78,8 +78,11 @@ async def process_audio(audio_data, user_id, image_id, websocket):
                 audio_bytes = await tts(text=segment)
                 segment_tts_end_time = time.time()
                 print(f"第{_order}段文本TTS耗时: {segment_tts_end_time - segment_tts_start_time:.2f}秒")
-
+                
+                websocket_send_start_time = time.time()
                 await websocket.send_bytes(audio_bytes)
+                send_end_time = time.time()
+                print(f"第{_order}段音频发送耗时: {send_end_time - websocket_send_start_time:.2f}秒")
             tts_end_time = time.time()
             print(f"TTS总耗时: {tts_end_time - tts_start_time:.2f}秒")
 
