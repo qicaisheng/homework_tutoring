@@ -40,7 +40,6 @@ def llm_reply(user_id, message, image_description):
     partial_message = ""
     for chunk in response:
         if chunk.choices[0].delta.content:
-            print(chunk.choices[0].delta.content)
             partial_message += chunk.choices[0].delta.content
             yield chunk.choices[0].delta.content
     
