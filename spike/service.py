@@ -61,7 +61,10 @@ async def process_audio(audio_data, user_id, image_id, websocket):
             llm_end_time = time.time()
             print(f"LLM reply耗时: {llm_end_time - llm_start_time:.2f}秒")
 
+            segment_start_time = time.time()
             segments = segment_text(stream_response, segment_size=2)
+            segment_end_time = time.time()
+            print(f"分段文本耗时: {segment_end_time - segment_start_time:.2f}秒")
 
             output_texts = ""
             _order = 0
@@ -78,6 +81,7 @@ async def process_audio(audio_data, user_id, image_id, websocket):
                 audio_bytes = await tts(text=segment)
                 segment_tts_end_time = time.time()
                 print(f"第{_order}段文本TTS耗时: {segment_tts_end_time - segment_tts_start_time:.2f}秒")
+                print(f"第{_order}段文本TTS耗时)(距离初始TTS): {segment_tts_end_time - tts_start_time:.2f}秒")
                 
                 websocket_send_start_time = time.time()
                 await websocket.send_bytes(audio_bytes)
