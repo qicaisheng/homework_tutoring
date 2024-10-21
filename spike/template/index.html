@@ -209,6 +209,7 @@
         const voiceInteraction = document.getElementById('voiceInteraction');
         const errorMessageElement = document.getElementById('errorMessage');
         const loadingElement = document.getElementById('loading');
+        const recordButton = document.getElementById('recordButton');
 
         imageUploadArea.addEventListener('click', () => {
             const input = document.createElement('input');
@@ -377,7 +378,8 @@
             mediaRecorder.start();
             isRecording = true;
             document.getElementById("recordingStatus").innerText = "正在听你说话...";
-            document.getElementById("recordButton").innerText = "停止说话";
+            recordButton.innerText = "停止说话";
+            recordButton.style.backgroundColor = "#FF0000";
         }
 
         function stopRecording() {
@@ -386,7 +388,8 @@
                 isRecording = false;
                 document.getElementById("recordingStatus").innerText = "";
                 document.getElementById("audioProcessing").style.display = "flex";
-                document.getElementById("recordButton").innerText = "开始说话";
+                recordButton.innerText = "开始说话";
+                recordButton.style.backgroundColor = "#2196F3";
             }
         }
 
@@ -443,7 +446,7 @@
             };
         }
 
-        document.getElementById('recordButton').addEventListener('click', function() {
+        recordButton.addEventListener('click', function() {
             if (isRecording) {
                 stopRecording();
             } else {
