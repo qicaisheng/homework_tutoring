@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import io
 import os
 import uuid
+import time
 from fastapi import WebSocketDisconnect
 from pydub import AudioSegment
 from spike.image_analysis import analyze_image, analyze_image_async
@@ -37,27 +38,53 @@ async def process_image(image_id, temp_image_path):
 
 async def process_audio(audio_data, user_id, image_id, websocket):
     try:
+        start_time = time.time()
+        
+        # 保存上传的音频文件
+        save_start_time = time.time()
         audio_filename = save_input_audio_file(audio_data)
+        save_end_time = time.time()
+        print(f"保存上传音频文件耗时: {save_end_time - save_start_time:.2f}秒")
 
+        # ASR
+        asr_start_time = time.time()
         input_text = await recognize(audio_filename)
+        asr_end_time = time.time()
+        print(f"ASR耗时: {asr_end_time - asr_start_time:.2f}秒")
+
         if input_text == "":
             await websocket.send_bytes(retryvoice_data())
         else:
+            # LLM reply
+            llm_start_time = time.time()
             stream_response = llm_reply(user_id, input_text, image_description_map.get(image_id, ""))
+            llm_end_time = time.time()
+            print(f"LLM reply耗时: {llm_end_time - llm_start_time:.2f}秒")
 
             segments = segment_text(stream_response, segment_size=2)
 
             output_texts = ""
             _order = 0
 
+            # TTS
+            tts_start_time = time.time()
             for segment in segments:
                 _order += 1
                 output_texts += segment
                 print(f"output_texts: {output_texts}")
                 print(f"order: {_order}, tts_text: {segment}")
 
+                segment_tts_start_time = time.time()
                 audio_bytes = await tts(text=segment)
+                segment_tts_end_time = time.time()
+                print(f"第{_order}段文本TTS耗时: {segment_tts_end_time - segment_tts_start_time:.2f}秒")
+
                 await websocket.send_bytes(audio_bytes)
+            tts_end_time = time.time()
+            print(f"TTS总耗时: {tts_end_time - tts_start_time:.2f}秒")
+
+        end_time = time.time()
+        print(f"处理音频总耗时: {end_time - start_time:.2f}秒")
 
     except WebSocketDisconnect:
         print("WebSocket 连接已断开")
