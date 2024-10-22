@@ -452,24 +452,41 @@
                 playNextAudio();
             };
         }
-
-        recordButton.addEventListener('click', function(event) {
-            event.preventDefault(); // 阻止默认行为
-            if (isRecording) {
-                stopRecording();
-            } else {
-                startRecording();
-            }
-        });
+        // 添加点击事件监听器
+        recordButton.addEventListener('click', handleRecordButtonInteraction);
 
         // 添加触摸事件监听器
-        recordButton.addEventListener('touchstart', function(event) {
+        recordButton.addEventListener('touchstart', handleRecordButtonInteraction);
+
+        // 处理录音按钮交互的函数
+        function handleRecordButtonInteraction(event) {
             event.preventDefault(); // 阻止默认行为
-            if (isRecording) {
-                stopRecording();
-            } else {
-                startRecording();
+            event.stopPropagation(); // 阻止事件冒泡
+
+            // 延迟执行，以确保事件被正确处理
+            setTimeout(() => {
+                if (isRecording) {
+                    stopRecording();
+                } else {
+                    startRecording();
+                }
+            }, 10);
+        }
+
+        // 禁用默认的触摸行为
+        document.body.addEventListener('touchstart', function(e) {
+            if (e.target === recordButton) {
+                e.preventDefault();
             }
+        }, { passive: false });
+
+        // 添加调试信息
+        recordButton.addEventListener('touchend', function(event) {
+            console.log('触摸结束事件被触发');
+        });
+
+        recordButton.addEventListener('mouseup', function(event) {
+            console.log('鼠标抬起事件被触发');
         });
     </script>
 </body>
