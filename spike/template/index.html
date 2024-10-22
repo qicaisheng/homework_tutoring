@@ -82,6 +82,7 @@
             display: block;
             margin: 20px auto;
             -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
         .loading, #imageUploadResult, #recordingStatus, #audioPlayback {
             margin-top: 10px;
@@ -366,28 +367,33 @@
                 isPlaying = false;
                 document.getElementById("audioPlayback").innerHTML = '';
             }
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
 
-            mediaRecorder.ondataavailable = (event) => {
-                audioChunks.push(event.data);
-            };
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
 
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-                sendAudioToServer(audioBlob);
-            };
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+                    sendAudioToServer(audioBlob);
+                };
 
-            mediaRecorder.start();
-            isRecording = true;
-            document.getElementById("recordingStatus").innerText = "正在听你说话...";
-            recordButton.innerText = "停止说话";
-            recordButton.style.backgroundColor = "#FF0000";
+                mediaRecorder.start();
+                isRecording = true;
+                document.getElementById("recordingStatus").innerText = "正在听你说话...";
+                recordButton.innerText = "停止说话";
+                recordButton.style.backgroundColor = "#FF0000";
+            } catch (error) {
+                console.error('无法访问麦克风:', error);
+                alert('无法访问麦克风，请确保已授予麦克风权限。');
+            }
         }
 
         function stopRecording() {
-            if (isRecording) {
+            if (isRecording && mediaRecorder) {
                 mediaRecorder.stop();
                 isRecording = false;
                 document.getElementById("recordingStatus").innerText = "";
@@ -452,25 +458,41 @@
                 playNextAudio();
             };
         }
-        // 添加点击事件监听器
-        recordButton.addEventListener('click', handleRecordButtonInteraction);
 
-        // 添加触摸事件监听器
-        recordButton.addEventListener('touchstart', handleRecordButtonInteraction);
+        // 移除之前的事件监听器然后添加新的事件监听器的原因是:
+        // 1. 确保不会重复添加事件监听器，避免多次触发同一事件
+        // 2. 更新事件处理逻辑，用新的函数替换旧的handleRecordButtonInteraction
+        // 3. 为不同的事件（点击、触摸开始、触摸结束）添加专门的处理函数，提高代码的可读性和可维护性
+        
+        // 移除旧的事件监听器
+        recordButton.removeEventListener('click', handleRecordButtonInteraction);
+        recordButton.removeEventListener('touchstart', handleRecordButtonInteraction);
 
-        // 处理录音按钮交互的函数
-        function handleRecordButtonInteraction(event) {
-            event.preventDefault(); // 阻止默认行为
-            event.stopPropagation(); // 阻止事件冒泡
+        // 添加新的、更具体的事件监听器
+        recordButton.addEventListener('click', handleRecordButtonClick);
+        recordButton.addEventListener('touchstart', handleRecordButtonTouchStart);
+        recordButton.addEventListener('touchend', handleRecordButtonTouchEnd);
+        function handleRecordButtonClick(event) {
+            event.preventDefault();
+            toggleRecording();
+        }
 
-            // 延迟执行，以确保事件被正确处理
-            setTimeout(() => {
-                if (isRecording) {
-                    stopRecording();
-                } else {
-                    startRecording();
-                }
-            }, 10);
+        function handleRecordButtonTouchStart(event) {
+            event.preventDefault();
+            startRecording();
+        }
+
+        function handleRecordButtonTouchEnd(event) {
+            event.preventDefault();
+            stopRecording();
+        }
+
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
         }
 
         // 禁用默认的触摸行为
