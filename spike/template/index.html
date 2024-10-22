@@ -453,7 +453,18 @@
             };
         }
 
-        recordButton.addEventListener('click', function() {
+        recordButton.addEventListener('click', function(event) {
+            event.preventDefault(); // 阻止默认行为
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+
+        // 添加触摸事件监听器
+        recordButton.addEventListener('touchstart', function(event) {
+            event.preventDefault(); // 阻止默认行为
             if (isRecording) {
                 stopRecording();
             } else {
