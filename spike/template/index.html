@@ -371,7 +371,8 @@
             }
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                audioSource = audioContext.createOscillator();
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioSource = audioContext.createMediaStreamSource(stream);
                 audioProcessor = audioContext.createScriptProcessor(4096, 1, 1);
                 
                 audioChunks = [];
@@ -385,7 +386,6 @@
                 
                 audioSource.connect(audioProcessor);
                 audioProcessor.connect(audioContext.destination);
-                audioSource.start();
                 
                 isRecording = true;
                 document.getElementById("recordingStatus").innerText = "正在录音...";
@@ -398,11 +398,10 @@
         }
 
         function stopRecording() {
-            if (isRecording && audioSource && audioProcessor) {
+            if (isRecording && audioProcessor) {
                 isRecording = false;
-                audioSource.stop();
-                audioSource.disconnect(audioProcessor);
-                audioProcessor.disconnect(audioContext.destination);
+                audioProcessor.disconnect();
+                audioSource.disconnect();
                 
                 const wavBuffer = createWavBuffer(audioChunks, audioContext.sampleRate);
                 const audioBlob = new Blob([wavBuffer], { type: "audio/wav" });

@@ -105,16 +105,16 @@ async def process_audio(audio_data, user_id, image_id, websocket):
             await websocket.send_text(error_message)
         except RuntimeError:
             pass  # 忽略已关闭的WebSocket连接
-    finally:
+    # finally:
         # 清理临时音频文件
-        if 'audio_filename' in locals():
-            os.remove(audio_filename)
+        # if 'audio_filename' in locals():
+            # os.remove(audio_filename)
 
 
 def save_input_audio_file(audio_data):
     audio_filename = f"./audio/audio_{uuid.uuid4()}.wav"
 
-    # audio = AudioSegment.from_file(io.BytesIO(audio_data), format="webm")  # 假设格式为 webm，根据实际情况调整
+    # audio = AudioSegment.from_file(io.BytesIO(audio_data), format="wav")  # 假设格式为 webm，根据实际情况调整
     
     # audio.export(audio_filename, format="wav", codec="pcm_s16le")
     
