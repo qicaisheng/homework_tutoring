@@ -174,8 +174,9 @@
     </div>
 
     <script>
-        let mediaRecorder;
-        let audioChunks = [];
+        let audioContext;
+        let audioSource;
+        let audioProcessor;
         let isRecording = false;
         let debounceTimer;
         let eventSource;
@@ -186,6 +187,7 @@
         let isWebSocketReady = false;
         let userId;
         let currentAudioElement;
+        let audioChunks = [];
 
         // 生成唯一的用户ID
         function generateUserId() {
@@ -368,34 +370,45 @@
                 document.getElementById("audioPlayback").innerHTML = '';
             }
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                audioSource = audioContext.createOscillator();
+                audioProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+                
                 audioChunks = [];
-
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
+                
+                audioProcessor.onaudioprocess = function(e) {
+                    if (isRecording) {
+                        const audioData = e.inputBuffer.getChannelData(0);
+                        audioChunks.push(new Float32Array(audioData));
+                    }
                 };
-
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-                    sendAudioToServer(audioBlob);
-                };
-
-                mediaRecorder.start();
+                
+                audioSource.connect(audioProcessor);
+                audioProcessor.connect(audioContext.destination);
+                audioSource.start();
+                
                 isRecording = true;
-                document.getElementById("recordingStatus").innerText = "正在听你说话...";
-                recordButton.innerText = "停止说话";
+                document.getElementById("recordingStatus").innerText = "正在录音...";
+                recordButton.innerText = "停止录音";
                 recordButton.style.backgroundColor = "#FF0000";
             } catch (error) {
-                console.error('无法访问麦克风:', error);
-                alert('无法访问麦克风，请确保已授予麦克风权限。');
+                console.error('无法开始录音:', error);
+                alert('无法开始录音。请确保您的设备支持音频录制，并使用最新版本的浏览器。');
             }
         }
 
         function stopRecording() {
-            if (isRecording && mediaRecorder) {
-                mediaRecorder.stop();
+            if (isRecording && audioSource && audioProcessor) {
                 isRecording = false;
+                audioSource.stop();
+                audioSource.disconnect(audioProcessor);
+                audioProcessor.disconnect(audioContext.destination);
+                
+                const wavBuffer = createWavBuffer(audioChunks, audioContext.sampleRate);
+                const audioBlob = new Blob([wavBuffer], { type: "audio/wav" });
+                
+                sendAudioToServer(audioBlob);
+                
                 document.getElementById("recordingStatus").innerText = "";
                 document.getElementById("audioProcessing").style.display = "flex";
                 recordButton.innerText = "开始说话";
@@ -403,6 +416,53 @@
             }
         }
 
+        function createWavBuffer(audioChunks, sampleRate) {
+            const numChannels = 1;
+            const bitsPerSample = 16;
+            const bytesPerSample = bitsPerSample / 8;
+            const blockAlign = numChannels * bytesPerSample;
+            const numSamples = audioChunks.reduce((acc, chunk) => acc + chunk.length, 0);
+            const dataSize = numSamples * bytesPerSample;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+
+            // RIFF chunk descriptor
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeString(view, 8, 'WAVE');
+
+            // FMT sub-chunk
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * blockAlign, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitsPerSample, true);
+
+            // Data sub-chunk
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            // 写入音频数据
+            let offset = 44;
+            for (const chunk of audioChunks) {
+                for (let i = 0; i < chunk.length; i++) {
+                    const sample = Math.max(-1, Math.min(1, chunk[i]));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+            }
+
+            return buffer;
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
         function sendAudioToServer(audioBlob) {
             if (!isWebSocketReady) {
                 initWebSocket();
@@ -463,6 +523,7 @@
         recordButton.addEventListener('click', handleRecordButtonClick);
         recordButton.addEventListener('touchstart', handleRecordButtonTouchStart);
         recordButton.addEventListener('touchend', handleRecordButtonTouchEnd);
+        
         function handleRecordButtonClick(event) {
             event.preventDefault();
             toggleRecording();

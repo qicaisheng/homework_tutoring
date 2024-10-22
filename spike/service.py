@@ -114,9 +114,13 @@ async def process_audio(audio_data, user_id, image_id, websocket):
 def save_input_audio_file(audio_data):
     audio_filename = f"./audio/audio_{uuid.uuid4()}.wav"
 
-    audio = AudioSegment.from_file(io.BytesIO(audio_data), format="webm")  # 假设格式为 webm，根据实际情况调整
+    # audio = AudioSegment.from_file(io.BytesIO(audio_data), format="webm")  # 假设格式为 webm，根据实际情况调整
     
-    audio.export(audio_filename, format="wav", codec="pcm_s16le")
+    # audio.export(audio_filename, format="wav", codec="pcm_s16le")
+    
+    with open(audio_filename, "wb") as f:
+        f.write(audio_data)
+
     return audio_filename
 
 
