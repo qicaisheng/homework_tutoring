@@ -459,16 +459,7 @@
             };
         }
 
-        // 移除之前的事件监听器然后添加新的事件监听器的原因是:
-        // 1. 确保不会重复添加事件监听器，避免多次触发同一事件
-        // 2. 更新事件处理逻辑，用新的函数替换旧的handleRecordButtonInteraction
-        // 3. 为不同的事件（点击、触摸开始、触摸结束）添加专门的处理函数，提高代码的可读性和可维护性
-        
-        // 移除旧的事件监听器
-        recordButton.removeEventListener('click', handleRecordButtonInteraction);
-        recordButton.removeEventListener('touchstart', handleRecordButtonInteraction);
 
-        // 添加新的、更具体的事件监听器
         recordButton.addEventListener('click', handleRecordButtonClick);
         recordButton.addEventListener('touchstart', handleRecordButtonTouchStart);
         recordButton.addEventListener('touchend', handleRecordButtonTouchEnd);
