@@ -7,9 +7,9 @@ from spike import service
 
 app = FastAPI()
 
-@app.get("/")
+@app.get("/homework_tutoring")
 async def get():
-    with open('spike/template/index.html', 'r', encoding='utf-8') as file:
+    with open('spike/template/homework_tutoring.html', 'r', encoding='utf-8') as file:
         html_content = file.read()
     return HTMLResponse(html_content)
 
