@@ -278,7 +278,7 @@
             loadingElement.style.display = "flex";
             confirmUploadBtn.disabled = true;
             
-            fetch("/upload_image", {
+            fetch("/ai/upload_image", {
                 method: "POST",
                 body: formData
             })
