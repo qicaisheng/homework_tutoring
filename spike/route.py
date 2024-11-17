@@ -7,21 +7,21 @@ from spike import service
 
 app = FastAPI()
 
-@app.get("/")
+@app.get("/ai")
 async def index():
     with open('spike/template/index.html', 'r', encoding='utf-8') as file:
         html_content = file.read()
     return HTMLResponse(html_content)
 
 
-@app.get("/homework_tutoring")
+@app.get("/ai/homework_tutoring")
 async def get():
     with open('spike/template/homework_tutoring.html', 'r', encoding='utf-8') as file:
         html_content = file.read()
     return HTMLResponse(html_content)
 
 
-@app.route("/upload_image", methods=["POST"])
+@app.post("/ai/upload_image")
 async def upload_image(request: Request):
     form = await request.form()
     image = form["image"]
@@ -32,7 +32,7 @@ async def upload_image(request: Request):
     return JSONResponse({"imageId": image_id})
 
 
-@app.websocket("/ws")
+@app.websocket("/ai/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     

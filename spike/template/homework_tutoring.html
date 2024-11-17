@@ -297,7 +297,7 @@
         }
     
         function initWebSocket() {
-            websocket = new WebSocket('ws://' + window.location.host + '/ws?user_id=' + userId);
+            websocket = new WebSocket('ws://' + window.location.host + '/ai/ws?user_id=' + userId);
             
             websocket.onopen = function(event) {
                 console.log('WebSocket 连接已建立');
