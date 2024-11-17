@@ -7,7 +7,7 @@ from spike import service
 
 app = FastAPI()
 
-@app.get("/ai")
+@app.get("/ai/")
 async def index():
     with open('spike/template/index.html', 'r', encoding='utf-8') as file:
         html_content = file.read()
