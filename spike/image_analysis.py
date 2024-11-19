@@ -32,7 +32,7 @@ def analyze_image(image) -> str:
     try:
         base64_image = encode_image(image)
         response = client.chat.completions.create(
-            model="glm-4v",
+            model="glm-4v-plus",
             messages=[
                 {
                     "role": "user",
