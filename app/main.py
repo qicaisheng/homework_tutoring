@@ -12,6 +12,7 @@ import asyncio
 
 from app.system.db import yield_postgresql_session, postgresql_session_context
 from app.udp.audio_server import start_audio_udp_server
+from app.udp.image_server import start_image_udp_server
 import app.config as config
 import app.service.login_service as login_service
 
@@ -23,9 +24,13 @@ async def lifespan(app: FastAPI):
         mqtt_manager.connect()
         print(f"Succeed to connect and start MQTT client")
 
-        print(f"Try to start udp server")
+        print(f"Try to start audio udp server")
         asyncio.create_task(start_audio_udp_server())
-        print(f"Succeed to start udp server")
+        print(f"Succeed to start audio udp server")
+
+        print(f"Try to start image udp server")
+        asyncio.create_task(start_image_udp_server())
+        print(f"Succeed to start image udp server")
 
         yield
     except Exception as e:
