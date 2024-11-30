@@ -24,8 +24,7 @@ def processEventPost(client, userdata, msg: mqtt.MQTTMessage):
             print(f"Validation error: {e}")
             return
         if mqtt_event.ReceivedIdentifier.LOGIN.value == event.identifier:
-            role_code = event.outParams.get('role')
-            login_service.device_login(device_sn=_device_sn, role_code=role_code)
+            login_service.device_login(device_sn=_device_sn)
     finally:
         postgresql_session_context.reset(token)
 

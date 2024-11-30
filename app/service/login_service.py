@@ -3,7 +3,7 @@ import app.mqtt.publisher as mqtt_publisher
 import app.config as config
 
 
-def device_login(device_sn: str, role_code: int):
+def device_login(device_sn: str):
     token = get_uuid4_no_hyphen()
     data = mqtt_publisher.UpdateTokenData(token=token)
     mqtt_publisher.update_token(data=data, device_sn=device_sn)
