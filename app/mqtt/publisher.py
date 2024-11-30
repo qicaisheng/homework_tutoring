@@ -3,7 +3,7 @@ from app.mqtt.client import publish as mqtt_publish
 import app.mqtt.event as mqtt_event
 import json
 
-COMMAND_CALL_TOPIC = "/user/folotoy/{device_sn}/thing/command/call"
+COMMAND_CALL_TOPIC = "/user/{device_sn}/command"
 
 class UpdateTokenData(BaseModel):
     token: str
@@ -11,6 +11,8 @@ class UpdateTokenData(BaseModel):
 class UpdateConfigData(BaseModel):
     speechUdpServerHost: str
     speechUdpServerPort: int
+    imageUdpServerHost: str
+    imageUdpServerPort: int
 
 class UpdateStartVoiceData(BaseModel):
     url: str

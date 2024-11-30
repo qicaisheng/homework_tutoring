@@ -11,7 +11,6 @@ class PublishedIdentifier(Enum):
 
 class ReceivedIdentifier(Enum):
     LOGIN = "login"
-    PRESS_SMALL_BTN = "press_small_btn"
     REAL_TIME_DATA = "real_time_data"
     DATA_CONFIG = "data_config"
     
