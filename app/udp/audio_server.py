@@ -14,7 +14,8 @@ from app.core.user import set_current_user
 from app.system.db import yield_postgresql_session, postgresql_session_context
 
 MIDDLE_FRAME_FLAG = b'\x01'
-START_OR_END_FLAG = b'\x02'
+START_FLAG = b'\x02'
+END_FLAG = b'\x03'
 
 udp_server_running = True
 validated_tokens = {}
@@ -34,15 +35,16 @@ async def start_audio_udp_server(host='0.0.0.0', port=config.udp_port):
             continue
 
         token = data[:16]
-        recording_id = data[16:18]
-        frame_type = data[18:19]
-        payload = data[19:]
+        image_id = data[16:18]
+        recording_id = data[18:20]
+        frame_type = data[20:21]
+        payload = data[21:]
         recording_id_int = int.from_bytes(recording_id, 'big')
         token_hex = token.hex()
-        print(f"Received token: {token_hex} RecordingId: {recording_id_int}")
+        print(f"Received token: {token_hex} ImageId: {image_id} RecordingId: {recording_id_int}")
         print(f"Received frame type: {frame_type}")
 
-        if frame_type == START_OR_END_FLAG:
+        if frame_type == START_FLAG:
             if token_hex not in validated_tokens:
                 _current_user = get_user_by_token(token_hex)
                 if not _current_user:
@@ -50,31 +52,35 @@ async def start_audio_udp_server(host='0.0.0.0', port=config.udp_port):
                     continue
                 validated_tokens[token_hex] = True
                 set_current_user(_current_user)
-            if payload:
-                print(payload)
-                print(f"Unexpected payload in end frame from {addr}")
-            if current_recording.get(token_hex):
-                file_id = str(uuid.uuid4())
-                directory = config.audio_file_direction
-                file_path = f"{directory}/recording-{file_id}.wav"
+            print(f"Start receiving from {addr}")
 
-                if not os.path.exists(directory):
-                    os.makedirs(directory)
-                save_audio_with_pydub(file_path, current_recording[token_hex])
-                print(f"Recording saved as {file_path}")
-                session: Session = next(yield_postgresql_session())
-                pg_context_token = postgresql_session_context.set(session)
-                try:
-                    # await split_response_to_uploaded_audio(file_path, recording_id_int)
-                    pass
-                finally:
-                    session.close()
-                    postgresql_session_context.reset(pg_context_token)
+        elif frame_type == END_FLAG:
+            if token_hex in validated_tokens:
+                if payload:
+                    print(payload)
+                    print(f"Unexpected payload in end frame from {addr}")
+                if current_recording.get(token_hex):
+                    file_id = str(uuid.uuid4())
+                    directory = config.audio_file_direction
+                    file_path = f"{directory}/recording-{file_id}.wav"
 
-                del validated_tokens[token_hex]
-                del current_recording[token_hex]
+                    if not os.path.exists(directory):
+                        os.makedirs(directory)
+                    save_audio_with_pydub(file_path, current_recording[token_hex])
+                    print(f"Recording saved as {file_path}")
+                    session: Session = next(yield_postgresql_session())
+                    pg_context_token = postgresql_session_context.set(session)
+                    try:
+                        # await split_response_to_uploaded_audio(file_path, recording_id_int)
+                        pass
+                    finally:
+                        session.close()
+                        postgresql_session_context.reset(pg_context_token)
+
+                    del validated_tokens[token_hex]
+                    del current_recording[token_hex]
             else:
-                print(f"Start receiving from {addr}")
+                print(f"Invalid token, ignoring end frame from {addr}")
 
         elif frame_type == MIDDLE_FRAME_FLAG:
             if validated_tokens.get(token_hex):
