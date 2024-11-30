@@ -11,7 +11,7 @@ from app.mqtt.client import publish as mqtt_publish
 import asyncio
 
 from app.system.db import yield_postgresql_session, postgresql_session_context
-from app.udp.server import start_udp_server
+from app.udp.audio_server import start_audio_udp_server
 import app.config as config
 import app.service.login_service as login_service
 
@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
         print(f"Succeed to connect and start MQTT client")
 
         print(f"Try to start udp server")
-        asyncio.create_task(start_udp_server())
+        asyncio.create_task(start_audio_udp_server())
         print(f"Succeed to start udp server")
 
         yield

@@ -20,7 +20,7 @@ udp_server_running = True
 validated_tokens = {}
 
 
-async def start_udp_server(host='0.0.0.0', port=config.udp_port):
+async def start_audio_udp_server(host='0.0.0.0', port=config.udp_port):
     global udp_server_running
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((host, port))
